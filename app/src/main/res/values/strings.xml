@@ -1,0 +1,162 @@
+<resources>
+    <string name="app_name">/files</string>
+    <string name="app_name_short">/files</string>
+    <string name="brand_suite">_init_</string>
+    <string name="brand_tagline">v 0.1 alpha</string>
+    <string name="boot_sequence">initializing file system subsystem...</string>
+    <string name="boot_ready">sys_ready [ok]</string>
+
+    <!-- Navigation Titles -->
+    <string name="nav_home">home</string>
+    <string name="nav_browse">browse</string>
+    <string name="nav_search">search</string>
+    <string name="nav_analyzer">storage analyzer</string>
+    <string name="nav_settings">settings</string>
+
+    <!-- Storage Volume Headers -->
+    <string name="storage_internal">internal storage</string>
+    <string name="storage_sdcard">sd card</string>
+    <string name="storage_usb">usb otg</string>
+    <string name="storage_used_of">%1$s used of %2$s</string>
+    <string name="storage_free">%1$s free</string>
+
+    <!-- Categories -->
+    <string name="category_images">images</string>
+    <string name="category_videos">videos</string>
+    <string name="category_audio">audio</string>
+    <string name="category_documents">docs</string>
+    <string name="category_apks">apks</string>
+    <string name="category_archives">archives</string>
+    <string name="category_downloads">downloads</string>
+    <string name="category_all">all files</string>
+
+    <!-- Sections -->
+    <string name="section_categories">categories</string>
+    <string name="section_storage">storage drives</string>
+    <string name="section_recents">recent files</string>
+    <string name="section_pinned">pinned folders</string>
+    <string name="section_largest_files">largest files</string>
+    <string name="section_largest_folders">largest folders</string>
+    <string name="section_junk_cache">cleanable junk / cache</string>
+
+    <!-- Actions & Buttons -->
+    <string name="action_open">open</string>
+    <string name="action_copy">copy</string>
+    <string name="action_move">move</string>
+    <string name="action_rename">rename</string>
+    <string name="action_delete">delete</string>
+    <string name="action_share">share</string>
+    <string name="action_zip">zip</string>
+    <string name="action_unzip">extract</string>
+    <string name="action_pin">pin</string>
+    <string name="action_unpin">unpin</string>
+    <string name="action_select_all">select all</string>
+    <string name="action_invert_selection">invert</string>
+    <string name="action_cancel">cancel</string>
+    <string name="action_confirm">confirm</string>
+    <string name="action_save">save</string>
+    <string name="action_apply">apply</string>
+    <string name="action_clean">clean now</string>
+    <string name="action_new_folder">new folder</string>
+    <string name="action_new_file">new file</string>
+    <string name="action_sort">sort</string>
+    <string name="action_view_list">list view</string>
+    <string name="action_view_grid">grid view</string>
+    <string name="action_install_apk">install apk</string>
+    <string name="action_copy_path">copy path</string>
+    <string name="action_rescan">rescan storage</string>
+
+    <!-- Sort Options -->
+    <string name="sort_name">name</string>
+    <string name="sort_size">size</string>
+    <string name="sort_date">date modified</string>
+    <string name="sort_type">type / extension</string>
+    <string name="sort_asc">ascending [a-z, 0-9]</string>
+    <string name="sort_desc">descending [z-a, 9-0]</string>
+
+    <!-- Dialogs & Prompts -->
+    <string name="dialog_create_folder_title">create directory</string>
+    <string name="dialog_create_folder_hint">Folder name</string>
+    <string name="dialog_create_file_title">create file</string>
+    <string name="dialog_create_file_hint">filename.txt</string>
+    <string name="dialog_rename_title">rename item</string>
+    <string name="dialog_rename_hint">New name</string>
+    <string name="dialog_delete_title">confirm deletion</string>
+    <string name="dialog_delete_message">Are you sure you want to permanently delete %1$d selected item(s)? This action cannot be undone.</string>
+    <string name="dialog_clean_title">purge junk files</string>
+    <string name="dialog_clean_message">Purge %1$s of cached app data, temp files, and empty folders? Only safe items are touched.</string>
+    <string name="dialog_paste_title">paste items here</string>
+    <string name="dialog_paste_action_copy">paste copy (%1$d items)</string>
+    <string name="dialog_paste_action_move">paste move (%1$d items)</string>
+
+    <!-- Progress Sheet -->
+    <string name="progress_operation_title">file operation in progress</string>
+    <string name="progress_status">%1$d / %2$d items processed</string>
+    <string name="progress_bytes">%1$s / %2$s</string>
+
+    <!-- Empty States & Warnings -->
+    <string name="empty_directory">directory is empty</string>
+    <string name="empty_directory_desc">No files or subdirectories found in this path.</string>
+    <string name="empty_recents">no recent files</string>
+    <string name="empty_recents_desc">Opened files and recent modifications will appear here.</string>
+    <string name="empty_pinned">no pinned folders</string>
+    <string name="empty_pinned_desc">Long press any folder in Browse and select Pin to add quick shortcuts.</string>
+    <string name="empty_search">no matching files found</string>
+    <string name="empty_search_desc">Try searching with a different term or adjust the filter chips.</string>
+    <string name="empty_junk">system storage is optimal</string>
+    <string name="empty_junk_desc">No safe junk or leftover cache files detected.</string>
+
+    <!-- Search & Filters -->
+    <string name="search_hint">search files and directories...</string>
+    <string name="search_scope_current">Current Directory</string>
+    <string name="search_scope_global">Global Storage</string>
+    <string name="filter_size_all">Any Size</string>
+    <string name="filter_size_small">&lt; 1 MB</string>
+    <string name="filter_size_medium">1 - 10 MB</string>
+    <string name="filter_size_large">10 - 100 MB</string>
+    <string name="filter_size_huge">&gt; 100 MB</string>
+    <string name="filter_date_all">Any Time</string>
+    <string name="filter_date_today">Today</string>
+    <string name="filter_date_week">Past 7 Days</string>
+    <string name="filter_date_month">Past 30 Days</string>
+    <string name="filter_date_older">Older</string>
+
+    <!-- File Details Sheet -->
+    <string name="details_title">file details &amp; preview</string>
+    <string name="details_name">name</string>
+    <string name="details_path">path</string>
+    <string name="details_size">size</string>
+    <string name="details_type">mime type</string>
+    <string name="details_modified">last modified</string>
+    <string name="details_permissions">permissions</string>
+    <string name="details_sha256">sha-256 hash</string>
+    <string name="details_md5">md5 checksum</string>
+    <string name="details_apk_package">package name</string>
+    <string name="details_apk_version">version</string>
+    <string name="details_apk_target_sdk">target sdk</string>
+    <string name="details_calculating">calculating...</string>
+
+    <!-- Settings -->
+    <string name="settings_title">settings</string>
+    <string name="settings_theme_title">theme appearance</string>
+    <string name="settings_theme_desc">Select UI color scheme (monochrome dark recommended)</string>
+    <string name="theme_dark">Dark (System / Terminal)</string>
+    <string name="theme_light">Light (Inverted Paper)</string>
+    <string name="theme_system">Follow System</string>
+    <string name="settings_hidden_title">show hidden files</string>
+    <string name="settings_hidden_desc">Display dotfiles and hidden system folders (.nomedia, .git, etc.)</string>
+    <string name="settings_default_view_title">default browse view</string>
+    <string name="settings_default_sort_title">default sorting</string>
+    <string name="settings_indexer_title">storage scanner status</string>
+    <string name="settings_indexer_desc">Periodic background storage indexer via WorkManager</string>
+    <string name="settings_about_title">about _init_ /files</string>
+    <string name="settings_about_desc">part of the _init_ system utility suite. built with high precision, zero telemetry, and scoped storage compliance.</string>
+    <string name="settings_version_label">v 0.1 alpha</string>
+
+    <!-- Permissions Rationale -->
+    <string name="permission_title">storage access required</string>
+    <string name="permission_message">_init_ /files requires permission to browse storage directories and perform file operations (copy, move, delete, zip). For full functionality, grant storage access below.</string>
+    <string name="permission_grant_btn">grant storage permission</string>
+    <string name="permission_saf_btn">use scoped folder picker</string>
+    <string name="permission_denied_banner">Storage access is restricted. Tap to grant permission or select a scoped folder.</string>
+</resources>
