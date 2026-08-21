@@ -61,13 +61,13 @@ private val LightColorScheme = lightColorScheme(
     onErrorContainer = LightTextPrimary
 )
 
-// Mechanical shapes - minimal subtle radii (2dp-4dp)
+// Refined rounded squircle shapes for softened Nothing OS aesthetic
 val InitShapes = Shapes(
-    extraSmall = RoundedCornerShape(2.dp),
-    small = RoundedCornerShape(3.dp),
-    medium = RoundedCornerShape(4.dp),
-    large = RoundedCornerShape(6.dp),
-    extraLarge = RoundedCornerShape(8.dp)
+    extraSmall = RoundedCornerShape(6.dp),
+    small = RoundedCornerShape(8.dp),
+    medium = RoundedCornerShape(10.dp),
+    large = RoundedCornerShape(12.dp),
+    extraLarge = RoundedCornerShape(16.dp)
 )
 
 // Extension for elevated surface

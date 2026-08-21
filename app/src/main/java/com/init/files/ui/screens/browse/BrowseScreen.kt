@@ -271,7 +271,7 @@ fun BrowseScreen(
                         onClick = { fabMenuExpanded = true },
                         containerColor = MaterialTheme.colorScheme.onSurface,
                         contentColor = MaterialTheme.colorScheme.surface,
-                        shape = RoundedCornerShape(2.dp)
+                        shape = RoundedCornerShape(8.dp)
                     ) {
                         Text(
                             text = "+",
@@ -789,14 +789,15 @@ fun FileItemGridCell(
             .border(
                 width = 1.dp,
                 color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outlineVariant,
-                shape = RoundedCornerShape(2.dp)
+                shape = RoundedCornerShape(8.dp)
             )
-            .clip(RoundedCornerShape(2.dp))
+            .clip(RoundedCornerShape(8.dp))
             .combinedClickable(
                 onClick = onClick,
                 onLongClick = onLongClick
             ),
-        color = if (isSelected) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surface
+        color = if (isSelected) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(8.dp)
     ) {
         Column(
             modifier = Modifier
@@ -807,7 +808,7 @@ fun FileItemGridCell(
             Box(
                 modifier = Modifier
                     .size(44.dp)
-                    .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(2.dp)),
+                    .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(6.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(

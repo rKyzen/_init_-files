@@ -28,6 +28,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -49,8 +50,10 @@ fun PermissionRationaleBanner(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .border(1.dp, MaterialTheme.colorScheme.onSurface, RoundedCornerShape(2.dp)),
-        color = MaterialTheme.colorScheme.surface
+            .border(1.dp, MaterialTheme.colorScheme.onSurface, RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(8.dp)),
+        color = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(8.dp)
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -109,9 +112,9 @@ fun PermissionRationaleDialog(
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .border(1.dp, MaterialTheme.colorScheme.onSurface, RoundedCornerShape(2.dp)),
+                .border(1.dp, MaterialTheme.colorScheme.onSurface, RoundedCornerShape(12.dp)),
             color = MaterialTheme.colorScheme.surface,
-            shape = RoundedCornerShape(2.dp)
+            shape = RoundedCornerShape(12.dp)
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {

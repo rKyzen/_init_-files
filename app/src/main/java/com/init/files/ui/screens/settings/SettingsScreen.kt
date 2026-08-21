@@ -316,14 +316,15 @@ fun SettingsScreen(
                         Surface(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(2.dp))
-                                .clip(RoundedCornerShape(2.dp))
+                                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
+                                .clip(RoundedCornerShape(8.dp))
                                 .clickable {
                                     try {
                                         uriHandler.openUri("https://init-android.netlify.app/")
                                     } catch (_: Exception) {}
                                 },
-                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            shape = RoundedCornerShape(8.dp)
                         ) {
                             Row(
                                 modifier = Modifier
@@ -362,14 +363,15 @@ fun SettingsScreen(
                         Surface(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(2.dp))
-                                .clip(RoundedCornerShape(2.dp))
+                                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
+                                .clip(RoundedCornerShape(8.dp))
                                 .clickable {
                                     try {
                                         uriHandler.openUri("https://discord.gg/BBt6RK4yyM")
                                     } catch (_: Exception) {}
                                 },
-                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            shape = RoundedCornerShape(8.dp)
                         ) {
                             Row(
                                 modifier = Modifier
@@ -437,7 +439,7 @@ fun ThemeOption(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(2.dp))
+            .clip(RoundedCornerShape(6.dp))
             .clickable(onClick = onClick)
             .padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
