@@ -50,10 +50,10 @@ fun PermissionRationaleBanner(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .border(1.dp, MaterialTheme.colorScheme.onSurface, RoundedCornerShape(8.dp))
-            .clip(RoundedCornerShape(8.dp)),
+            .border(1.dp, MaterialTheme.colorScheme.onSurface, RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(16.dp)),
         color = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(8.dp)
+        shape = RoundedCornerShape(16.dp)
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -112,9 +112,9 @@ fun PermissionRationaleDialog(
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .border(1.dp, MaterialTheme.colorScheme.onSurface, RoundedCornerShape(12.dp)),
+                .border(1.dp, MaterialTheme.colorScheme.onSurface, RoundedCornerShape(20.dp)),
             color = MaterialTheme.colorScheme.surface,
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(20.dp)
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {

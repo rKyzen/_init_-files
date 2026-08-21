@@ -230,11 +230,11 @@ fun InitButton(
 
     Surface(
         modifier = modifier
-            .border(1.dp, borderColor, RoundedCornerShape(8.dp))
-            .clip(RoundedCornerShape(8.dp))
+            .border(1.dp, borderColor, RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(12.dp))
             .clickable(enabled = enabled, onClick = onClick),
         color = bgColor,
-        shape = RoundedCornerShape(8.dp)
+        shape = RoundedCornerShape(12.dp)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
@@ -277,8 +277,8 @@ fun InitBadge(
 
     Box(
         modifier = modifier
-            .border(1.dp, borderColor, RoundedCornerShape(4.dp))
-            .background(bgColor, RoundedCornerShape(4.dp))
+            .border(1.dp, borderColor, RoundedCornerShape(6.dp))
+            .background(bgColor, RoundedCornerShape(6.dp))
             .padding(horizontal = 6.dp, vertical = 2.dp)
     ) {
         Text(
@@ -324,7 +324,7 @@ fun InitSegmentedProgressBar(
                 modifier = Modifier
                     .weight(1f)
                     .height(8.dp)
-                    .background(color, RoundedCornerShape(2.dp))
+                    .background(color, RoundedCornerShape(3.dp))
             )
         }
     }
@@ -377,17 +377,17 @@ fun InitCard(
 ) {
     val cardModifier = if (onClick != null) {
         modifier
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
-            .clip(RoundedCornerShape(8.dp))
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(16.dp))
             .clickable(onClick = onClick)
     } else {
-        modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
+        modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(16.dp))
     }
 
     Surface(
         modifier = cardModifier,
         color = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(8.dp)
+        shape = RoundedCornerShape(16.dp)
     ) {
         content()
     }

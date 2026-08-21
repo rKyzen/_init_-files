@@ -73,9 +73,9 @@ fun TextInputDialog(
             modifier = Modifier
                 .fillMaxWidth()
                 .imePadding()
-                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp)),
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp)),
             color = MaterialTheme.colorScheme.surface,
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(20.dp)
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
                 Text(
@@ -154,10 +154,10 @@ fun ConfirmationDialog(
                 .border(
                     1.dp,
                     if (isDestructive) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outlineVariant,
-                    RoundedCornerShape(12.dp)
+                    RoundedCornerShape(20.dp)
                 ),
             color = MaterialTheme.colorScheme.surface,
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(20.dp)
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -224,9 +224,9 @@ fun OperationProgressDialog(
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp)),
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp)),
             color = MaterialTheme.colorScheme.surface,
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(20.dp)
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
                 Row(
@@ -331,7 +331,7 @@ fun SortBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         containerColor = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
     ) {
         Column(
             modifier = Modifier
@@ -437,7 +437,7 @@ fun SortOptionItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(6.dp))
+            .clip(RoundedCornerShape(10.dp))
             .clickable(onClick = onClick)
             .padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically

@@ -360,10 +360,10 @@ fun BuiltInPdfReader(
                     Surface(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
-                            .clip(RoundedCornerShape(8.dp)),
+                            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(14.dp))
+                            .clip(RoundedCornerShape(14.dp)),
                         color = Color.White,
-                        shape = RoundedCornerShape(8.dp)
+                        shape = RoundedCornerShape(14.dp)
                     ) {
                         Image(
                             bitmap = bmp.asImageBitmap(),
@@ -380,10 +380,10 @@ fun BuiltInPdfReader(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(bottom = 16.dp)
-                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
-                    .clip(RoundedCornerShape(8.dp)),
+                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp))
+                    .clip(RoundedCornerShape(12.dp)),
                 color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
-                shape = RoundedCornerShape(8.dp)
+                shape = RoundedCornerShape(12.dp)
             ) {
                 Text(
                     text = "page $firstVisibleIndex of $pageCount",
@@ -502,11 +502,11 @@ fun BuiltInVideoPlayer(
                         Surface(
                             modifier = Modifier
                                 .size(40.dp)
-                                .border(1.dp, MaterialTheme.colorScheme.onSurface, RoundedCornerShape(8.dp))
-                                .clip(RoundedCornerShape(8.dp))
+                                .border(1.dp, MaterialTheme.colorScheme.onSurface, RoundedCornerShape(14.dp))
+                                .clip(RoundedCornerShape(14.dp))
                                 .clickable { viewModel.togglePlayPause() },
                             color = MaterialTheme.colorScheme.onSurface,
-                            shape = RoundedCornerShape(8.dp)
+                            shape = RoundedCornerShape(14.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
@@ -578,10 +578,10 @@ fun BuiltInImageViewer(
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(16.dp)
-                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
-                .clip(RoundedCornerShape(8.dp)),
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp))
+                .clip(RoundedCornerShape(12.dp)),
             color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
-            shape = RoundedCornerShape(8.dp)
+            shape = RoundedCornerShape(12.dp)
         ) {
             Row(
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
@@ -628,8 +628,8 @@ fun BuiltInAudioPlayer(
         Box(
             modifier = Modifier
                 .size(120.dp)
-                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp)),
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(20.dp)),
             contentAlignment = Alignment.Center
         ) {
             Icon(
@@ -691,11 +691,11 @@ fun BuiltInAudioPlayer(
             Surface(
                 modifier = Modifier
                     .size(48.dp)
-                    .border(1.dp, MaterialTheme.colorScheme.onSurface, RoundedCornerShape(10.dp))
-                    .clip(RoundedCornerShape(10.dp))
+                    .border(1.dp, MaterialTheme.colorScheme.onSurface, RoundedCornerShape(14.dp))
+                    .clip(RoundedCornerShape(14.dp))
                     .clickable { viewModel.togglePlayPause() },
                 color = MaterialTheme.colorScheme.onSurface,
-                shape = RoundedCornerShape(10.dp)
+                shape = RoundedCornerShape(14.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
