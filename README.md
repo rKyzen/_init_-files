@@ -61,8 +61,10 @@ Planned for future releases:
 
 ## License
 
-TBD
+MIT
 
 ## Part of the `_init_` Suite
 
 `_init_` is a boot-sequence-inspired suite of Android system utilities. `_init_ /files` is the first release, with future apps following the same `_init_ /[name]` naming convention.
+
+
