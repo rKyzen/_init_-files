@@ -107,13 +107,13 @@ fun Modifier.texturedGlass(
     backgroundColor: Color? = null,
     borderColor: Color? = null,
     elevation: Dp = 12.dp,
-    dotSpacing: Dp = 7.dp,
-    dotRadius: Dp = 0.5.dp
+    dotSpacing: Dp = 5.5.dp,
+    dotRadius: Dp = 0.65.dp
 ): Modifier = composed {
     val isDark = isSystemInDarkTheme()
-    val bg = backgroundColor ?: MaterialTheme.colorScheme.surface.copy(alpha = if (isDark) 0.94f else 0.97f)
-    val borderCol = borderColor ?: MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (isDark) 0.6f else 0.4f)
-    val dotColor = MaterialTheme.colorScheme.outline.copy(alpha = if (isDark) 0.045f else 0.025f)
+    val bg = backgroundColor ?: MaterialTheme.colorScheme.surface.copy(alpha = if (isDark) 0.93f else 0.96f)
+    val borderCol = borderColor ?: MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (isDark) 0.65f else 0.45f)
+    val dotColor = if (isDark) Color(0xFF888888).copy(alpha = 0.30f) else Color(0xFF666666).copy(alpha = 0.22f)
 
     this
         .shadow(
@@ -125,7 +125,7 @@ fun Modifier.texturedGlass(
         .clip(shape)
         .background(bg, shape)
         .drawWithContent {
-            // Draw very subtle, faint micro-stipple texture
+            // Draw grayed-out tactile dot matrix texture
             val spacingPx = dotSpacing.toPx()
             val radiusPx = dotRadius.toPx()
             val width = size.width
@@ -164,8 +164,8 @@ fun TexturedGlassSurface(
     backgroundColor: Color? = null,
     borderColor: Color? = null,
     elevation: Dp = 12.dp,
-    dotSpacing: Dp = 7.dp,
-    dotRadius: Dp = 0.5.dp,
+    dotSpacing: Dp = 5.5.dp,
+    dotRadius: Dp = 0.65.dp,
     content: @Composable () -> Unit
 ) {
     Box(
