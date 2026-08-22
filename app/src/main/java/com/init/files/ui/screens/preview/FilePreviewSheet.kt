@@ -247,7 +247,10 @@ fun FilePreviewSheet(
                                         fontFamily = JetBrainsMonoFontFamily,
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.Medium,
-                                        color = MaterialTheme.colorScheme.onSurface
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.padding(horizontal = 24.dp)
                                     )
                                     Spacer(modifier = Modifier.height(6.dp))
                                     Text(
