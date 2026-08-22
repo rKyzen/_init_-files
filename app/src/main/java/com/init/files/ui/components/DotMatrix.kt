@@ -107,25 +107,25 @@ fun Modifier.texturedGlass(
     backgroundColor: Color? = null,
     borderColor: Color? = null,
     elevation: Dp = 12.dp,
-    dotSpacing: Dp = 6.dp,
-    dotRadius: Dp = 0.8.dp
+    dotSpacing: Dp = 7.dp,
+    dotRadius: Dp = 0.5.dp
 ): Modifier = composed {
     val isDark = isSystemInDarkTheme()
-    val bg = backgroundColor ?: MaterialTheme.colorScheme.surface.copy(alpha = if (isDark) 0.93f else 0.96f)
-    val borderCol = borderColor ?: MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (isDark) 0.7f else 0.5f)
-    val dotColor = MaterialTheme.colorScheme.onSurface.copy(alpha = if (isDark) 0.12f else 0.08f)
+    val bg = backgroundColor ?: MaterialTheme.colorScheme.surface.copy(alpha = if (isDark) 0.94f else 0.97f)
+    val borderCol = borderColor ?: MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (isDark) 0.6f else 0.4f)
+    val dotColor = MaterialTheme.colorScheme.outline.copy(alpha = if (isDark) 0.045f else 0.025f)
 
     this
         .shadow(
             elevation = elevation,
             shape = shape,
-            spotColor = Color.Black.copy(alpha = if (isDark) 0.55f else 0.15f),
-            ambientColor = Color.Black.copy(alpha = if (isDark) 0.35f else 0.08f)
+            spotColor = Color.Black.copy(alpha = if (isDark) 0.5f else 0.12f),
+            ambientColor = Color.Black.copy(alpha = if (isDark) 0.3f else 0.06f)
         )
         .clip(shape)
         .background(bg, shape)
         .drawWithContent {
-            // Draw crisp tactile dot matrix grain
+            // Draw very subtle, faint micro-stipple texture
             val spacingPx = dotSpacing.toPx()
             val radiusPx = dotRadius.toPx()
             val width = size.width
@@ -164,8 +164,8 @@ fun TexturedGlassSurface(
     backgroundColor: Color? = null,
     borderColor: Color? = null,
     elevation: Dp = 12.dp,
-    dotSpacing: Dp = 6.dp,
-    dotRadius: Dp = 0.8.dp,
+    dotSpacing: Dp = 7.dp,
+    dotRadius: Dp = 0.5.dp,
     content: @Composable () -> Unit
 ) {
     Box(
