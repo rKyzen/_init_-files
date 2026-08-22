@@ -113,6 +113,7 @@ import com.init.files.theme.SignalAccent
 import com.init.files.theme.surfaceElevated
 import com.init.files.ui.components.ConfirmationDialog
 import com.init.files.ui.components.DotMatrixEmptyPattern
+import com.init.files.ui.components.InitDropdownMenu
 import com.init.files.ui.components.InitBadge
 import com.init.files.ui.components.InitBreadcrumbs
 import com.init.files.ui.components.InitButton
@@ -281,10 +282,9 @@ fun BrowseScreen(
                         )
                     }
 
-                    DropdownMenu(
+                    InitDropdownMenu(
                         expanded = fabMenuExpanded,
-                        onDismissRequest = { fabMenuExpanded = false },
-                        modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+                        onDismissRequest = { fabMenuExpanded = false }
                     ) {
                         DropdownMenuItem(
                             text = { Text("NEW FOLDER", fontFamily = JetBrainsMonoFontFamily, fontSize = 12.sp) },
@@ -719,10 +719,9 @@ fun FileItemRow(
                         )
                     }
 
-                    DropdownMenu(
+                    InitDropdownMenu(
                         expanded = menuExpanded,
-                        onDismissRequest = { menuExpanded = false },
-                        modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+                        onDismissRequest = { menuExpanded = false }
                     ) {
                         if (onInfo != null) {
                             DropdownMenuItem(

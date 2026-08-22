@@ -62,6 +62,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -124,13 +126,14 @@ fun HomeScreen(
         gesturesEnabled = drawerState.isOpen,
         drawerContent = {
             ModalDrawerSheet(
-                drawerContainerColor = MaterialTheme.colorScheme.surface,
+                drawerContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.90f),
                 drawerContentColor = MaterialTheme.colorScheme.onSurface,
                 drawerShape = RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp),
                 modifier = Modifier
                     .width(300.dp)
                     .fillMaxHeight()
-                    .border(width = 1.dp, color = MaterialTheme.colorScheme.outlineVariant, shape = RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp))
+                    .shadow(elevation = 16.dp, shape = RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp), spotColor = Color.Black.copy(alpha = 0.5f))
+                    .border(width = 1.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f), shape = RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp))
             ) {
                 Column(
                     modifier = Modifier

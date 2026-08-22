@@ -78,6 +78,7 @@ import com.init.files.ui.components.ConfirmationDialog
 import com.init.files.ui.components.InitBadge
 import com.init.files.ui.components.InitButton
 import com.init.files.ui.components.InitCard
+import com.init.files.ui.components.InitDropdownMenu
 import com.init.files.ui.components.InitSectionHeader
 import com.init.files.ui.components.InitTopBar
 import com.init.files.ui.components.InitVideoLoading
@@ -582,10 +583,9 @@ fun LargestFileRow(
                     )
                 }
 
-                DropdownMenu(
+                InitDropdownMenu(
                     expanded = menuExpanded,
-                    onDismissRequest = { menuExpanded = false },
-                    modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+                    onDismissRequest = { menuExpanded = false }
                 ) {
                     DropdownMenuItem(
                         text = {
@@ -750,10 +750,9 @@ fun LargestFolderRow(
                     )
                 }
 
-                DropdownMenu(
+                InitDropdownMenu(
                     expanded = menuExpanded,
-                    onDismissRequest = { menuExpanded = false },
-                    modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+                    onDismissRequest = { menuExpanded = false }
                 ) {
                     DropdownMenuItem(
                         text = {

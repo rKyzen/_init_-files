@@ -37,6 +37,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -73,8 +74,10 @@ fun TextInputDialog(
             modifier = Modifier
                 .fillMaxWidth()
                 .imePadding()
-                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp)),
-            color = MaterialTheme.colorScheme.surface,
+                .shadow(elevation = 16.dp, shape = RoundedCornerShape(20.dp), spotColor = Color.Black.copy(alpha = 0.5f))
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f), RoundedCornerShape(20.dp))
+                .clip(RoundedCornerShape(20.dp)),
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.90f),
             shape = RoundedCornerShape(20.dp)
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
@@ -151,12 +154,14 @@ fun ConfirmationDialog(
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
+                .shadow(elevation = 16.dp, shape = RoundedCornerShape(20.dp), spotColor = Color.Black.copy(alpha = 0.5f))
                 .border(
                     1.dp,
-                    if (isDestructive) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outlineVariant,
+                    if (isDestructive) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f),
                     RoundedCornerShape(20.dp)
-                ),
-            color = MaterialTheme.colorScheme.surface,
+                )
+                .clip(RoundedCornerShape(20.dp)),
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.90f),
             shape = RoundedCornerShape(20.dp)
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
@@ -224,8 +229,10 @@ fun OperationProgressDialog(
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp)),
-            color = MaterialTheme.colorScheme.surface,
+                .shadow(elevation = 16.dp, shape = RoundedCornerShape(20.dp), spotColor = Color.Black.copy(alpha = 0.5f))
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f), RoundedCornerShape(20.dp))
+                .clip(RoundedCornerShape(20.dp)),
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.90f),
             shape = RoundedCornerShape(20.dp)
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
@@ -330,7 +337,8 @@ fun SortBottomSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = MaterialTheme.colorScheme.surface,
+        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.90f),
+        scrimColor = Color.Black.copy(alpha = 0.5f),
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
     ) {
         Column(
