@@ -90,6 +90,7 @@ import com.init.files.ui.components.PermissionRationaleBanner
 import com.init.files.ui.components.PermissionRationaleDialog
 import com.init.files.ui.components.hasStoragePermission
 import com.init.files.ui.components.requestStoragePermission
+import com.init.files.ui.components.texturedGlass
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -126,18 +127,17 @@ fun HomeScreen(
         gesturesEnabled = drawerState.isOpen,
         drawerContent = {
             ModalDrawerSheet(
-                drawerContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.90f),
+                drawerContainerColor = Color.Transparent,
                 drawerContentColor = MaterialTheme.colorScheme.onSurface,
                 drawerShape = RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp),
                 modifier = Modifier
                     .width(300.dp)
                     .fillMaxHeight()
-                    .shadow(elevation = 16.dp, shape = RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp), spotColor = Color.Black.copy(alpha = 0.5f))
-                    .border(width = 1.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f), shape = RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp))
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
+                        .texturedGlass(shape = RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp), elevation = 16.dp)
                         .statusBarsPadding()
                         .navigationBarsPadding()
                 ) {

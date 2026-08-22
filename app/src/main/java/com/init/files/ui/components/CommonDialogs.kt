@@ -70,15 +70,12 @@ fun TextInputDialog(
     var text by remember { mutableStateOf(initialValue) }
 
     Dialog(onDismissRequest = onDismiss) {
-        Surface(
+        TexturedGlassSurface(
             modifier = Modifier
                 .fillMaxWidth()
-                .imePadding()
-                .shadow(elevation = 16.dp, shape = RoundedCornerShape(20.dp), spotColor = Color.Black.copy(alpha = 0.5f))
-                .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f), RoundedCornerShape(20.dp))
-                .clip(RoundedCornerShape(20.dp)),
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.90f),
-            shape = RoundedCornerShape(20.dp)
+                .imePadding(),
+            shape = RoundedCornerShape(20.dp),
+            elevation = 16.dp
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
                 Text(
@@ -89,24 +86,28 @@ fun TextInputDialog(
                     color = MaterialTheme.colorScheme.onSurface
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
                 OutlinedTextField(
                     value = text,
                     onValueChange = { text = it },
+                    singleLine = true,
                     placeholder = {
                         Text(
                             text = hint,
                             fontFamily = JetBrainsMonoFontFamily,
-                            fontSize = 12.sp,
+                            fontSize = 13.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     },
-                    singleLine = true,
-                    textStyle = MaterialTheme.typography.bodyMedium,
+                    textStyle = MaterialTheme.typography.bodyMedium.copy(
+                        fontFamily = JetBrainsMonoFontFamily,
+                        fontSize = 14.sp
+                    ),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = MaterialTheme.colorScheme.onSurface,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                        cursorColor = SignalAccent,
                         focusedTextColor = MaterialTheme.colorScheme.onSurface,
                         unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                     ),
@@ -128,8 +129,12 @@ fun TextInputDialog(
                     InitButton(
                         text = confirmButtonText,
                         isPrimary = true,
-                        enabled = text.trim().isNotEmpty(),
-                        onClick = { onConfirm(text.trim()) }
+                        enabled = text.isNotBlank(),
+                        onClick = {
+                            if (text.isNotBlank()) {
+                                onConfirm(text.trim())
+                            }
+                        }
                     )
                 }
             }
@@ -138,11 +143,10 @@ fun TextInputDialog(
 }
 
 /**
- * Confirmation dialog for destructive actions (Delete, Clean).
- * Uses strong monochrome typography and warning iconography without red.
+ * Technical confirmation dialog for destructive actions (e.g. Delete, Empty Trash).
  */
 @Composable
-fun ConfirmationDialog(
+fun ConfirmDialog(
     title: String,
     message: String,
     confirmText: String = stringResource(R.string.action_delete),
@@ -151,18 +155,11 @@ fun ConfirmationDialog(
     onConfirm: () -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .shadow(elevation = 16.dp, shape = RoundedCornerShape(20.dp), spotColor = Color.Black.copy(alpha = 0.5f))
-                .border(
-                    1.dp,
-                    if (isDestructive) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f),
-                    RoundedCornerShape(20.dp)
-                )
-                .clip(RoundedCornerShape(20.dp)),
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.90f),
-            shape = RoundedCornerShape(20.dp)
+        TexturedGlassSurface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            borderColor = if (isDestructive) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f),
+            elevation = 16.dp
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -218,6 +215,26 @@ fun ConfirmationDialog(
 }
 
 /**
+ * Confirmation dialog alias for backward compatibility.
+ */
+@Composable
+fun ConfirmationDialog(
+    title: String,
+    message: String,
+    confirmText: String = stringResource(R.string.action_delete),
+    isDestructive: Boolean = true,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) = ConfirmDialog(
+    title = title,
+    message = message,
+    confirmText = confirmText,
+    isDestructive = isDestructive,
+    onDismiss = onDismiss,
+    onConfirm = onConfirm
+)
+
+/**
  * Technical operation progress dialog.
  */
 @Composable
@@ -226,14 +243,10 @@ fun OperationProgressDialog(
     onCancel: () -> Unit
 ) {
     Dialog(onDismissRequest = {}) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .shadow(elevation = 16.dp, shape = RoundedCornerShape(20.dp), spotColor = Color.Black.copy(alpha = 0.5f))
-                .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f), RoundedCornerShape(20.dp))
-                .clip(RoundedCornerShape(20.dp)),
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.90f),
-            shape = RoundedCornerShape(20.dp)
+        TexturedGlassSurface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            elevation = 16.dp
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
                 Row(
@@ -337,23 +350,29 @@ fun SortBottomSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.90f),
+        containerColor = Color.Transparent,
         scrimColor = Color.Black.copy(alpha = 0.5f),
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        dragHandle = null
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding()
-                .padding(20.dp)
+        TexturedGlassSurface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+            elevation = 16.dp
         ) {
-            Text(
-                text = stringResource(R.string.action_sort).uppercase(),
-                fontFamily = MichromaFontFamily,
-                fontSize = 14.sp,
-                letterSpacing = 1.sp,
-                color = MaterialTheme.colorScheme.onSurface
-            )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(20.dp)
+            ) {
+                Text(
+                    text = stringResource(R.string.action_sort).uppercase(),
+                    fontFamily = MichromaFontFamily,
+                    fontSize = 14.sp,
+                    letterSpacing = 1.sp,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -434,6 +453,7 @@ fun SortBottomSheet(
             }
         }
     }
+}
 }
 
 @Composable

@@ -109,6 +109,7 @@ import com.init.files.ui.components.InitCard
 import com.init.files.ui.components.InitSectionHeader
 import com.init.files.ui.components.InitTopBar
 import com.init.files.ui.components.InitVideoLoading
+import com.init.files.ui.components.TexturedGlassSurface
 import com.init.files.ui.screens.browse.shareSelectedFiles
 import java.io.File
 import java.text.SimpleDateFormat
@@ -274,15 +275,12 @@ fun FilePreviewSheet(
                 exit = fadeOut(),
                 modifier = Modifier.align(Alignment.BottomCenter)
             ) {
-                Surface(
+                TexturedGlassSurface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .navigationBarsPadding()
-                        .shadow(elevation = 16.dp, shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp), spotColor = Color.Black.copy(alpha = 0.5f))
-                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f), RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
-                        .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)),
-                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.90f),
-                    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+                        .navigationBarsPadding(),
+                    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+                    elevation = 16.dp
                 ) {
                     Column(
                         modifier = Modifier
@@ -383,15 +381,12 @@ fun BuiltInPdfReader(
             }
 
             // Floating Page Counter Badge
-            Surface(
+            TexturedGlassSurface(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(bottom = 16.dp)
-                    .shadow(elevation = 8.dp, shape = RoundedCornerShape(12.dp), spotColor = Color.Black.copy(alpha = 0.4f))
-                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f), RoundedCornerShape(12.dp))
-                    .clip(RoundedCornerShape(12.dp)),
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.82f),
-                shape = RoundedCornerShape(12.dp)
+                    .padding(bottom = 16.dp),
+                shape = RoundedCornerShape(12.dp),
+                elevation = 8.dp
             ) {
                 Text(
                     text = "page $firstVisibleIndex of $pageCount",
@@ -582,15 +577,12 @@ fun BuiltInImageViewer(
         )
 
         // Overlay Toolbar
-        Surface(
+        TexturedGlassSurface(
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .padding(16.dp)
-                .shadow(elevation = 8.dp, shape = RoundedCornerShape(12.dp), spotColor = Color.Black.copy(alpha = 0.4f))
-                .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f), RoundedCornerShape(12.dp))
-                .clip(RoundedCornerShape(12.dp)),
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.80f),
-            shape = RoundedCornerShape(12.dp)
+                .padding(16.dp),
+            shape = RoundedCornerShape(12.dp),
+            elevation = 8.dp
         ) {
             Row(
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),

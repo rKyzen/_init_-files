@@ -1,13 +1,24 @@
 package com.init.files.ui.components
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.init.files.theme.SignalAccent
@@ -87,3 +98,87 @@ fun DotMatrixEmptyPattern(
         }
     }
 }
+
+/**
+ * Modifier for Nothing OS-style textured glassmorphism with tactile micro-stipple grain and frosted translucency.
+ */
+fun Modifier.texturedGlass(
+    shape: Shape = RoundedCornerShape(16.dp),
+    backgroundColor: Color? = null,
+    borderColor: Color? = null,
+    elevation: Dp = 12.dp,
+    dotSpacing: Dp = 5.dp,
+    dotRadius: Dp = 0.65.dp
+): Modifier = composed {
+    val isDark = isSystemInDarkTheme()
+    val bg = backgroundColor ?: MaterialTheme.colorScheme.surface.copy(alpha = if (isDark) 0.85f else 0.89f)
+    val borderCol = borderColor ?: MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (isDark) 0.7f else 0.5f)
+    val dotColor = MaterialTheme.colorScheme.onSurface.copy(alpha = if (isDark) 0.08f else 0.05f)
+
+    this
+        .shadow(
+            elevation = elevation,
+            shape = shape,
+            spotColor = Color.Black.copy(alpha = if (isDark) 0.55f else 0.15f),
+            ambientColor = Color.Black.copy(alpha = if (isDark) 0.35f else 0.08f)
+        )
+        .clip(shape)
+        .background(bg, shape)
+        .drawWithContent {
+            // Draw subtle tactile micro-stipple grain
+            val spacingPx = dotSpacing.toPx()
+            val radiusPx = dotRadius.toPx()
+            val width = size.width
+            val height = size.height
+
+            var row = 0
+            var y = spacingPx / 2
+            while (y < height) {
+                val xOffset = if (row % 2 == 1) spacingPx / 2 else 0f
+                var x = (spacingPx / 2) + xOffset
+                while (x < width) {
+                    drawCircle(
+                        color = dotColor,
+                        radius = radiusPx,
+                        center = Offset(x, y)
+                    )
+                    x += spacingPx
+                }
+                y += spacingPx
+                row++
+            }
+
+            // Draw composable content
+            drawContent()
+        }
+        .border(1.dp, borderCol, shape)
+}
+
+/**
+ * Composable Surface container with tactile micro-stipple grain textured glassmorphism.
+ */
+@Composable
+fun TexturedGlassSurface(
+    modifier: Modifier = Modifier,
+    shape: Shape = RoundedCornerShape(16.dp),
+    backgroundColor: Color? = null,
+    borderColor: Color? = null,
+    elevation: Dp = 12.dp,
+    dotSpacing: Dp = 5.dp,
+    dotRadius: Dp = 0.65.dp,
+    content: @Composable () -> Unit
+) {
+    Box(
+        modifier = modifier.texturedGlass(
+            shape = shape,
+            backgroundColor = backgroundColor,
+            borderColor = borderColor,
+            elevation = elevation,
+            dotSpacing = dotSpacing,
+            dotRadius = dotRadius
+        )
+    ) {
+        content()
+    }
+}
+

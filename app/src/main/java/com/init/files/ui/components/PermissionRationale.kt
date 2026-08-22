@@ -49,14 +49,11 @@ fun PermissionRationaleBanner(
     onRequestPermission: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .shadow(elevation = 8.dp, shape = RoundedCornerShape(16.dp), spotColor = Color.Black.copy(alpha = 0.3f))
-            .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f), RoundedCornerShape(16.dp))
-            .clip(RoundedCornerShape(16.dp)),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.90f),
-        shape = RoundedCornerShape(16.dp)
+    TexturedGlassSurface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        borderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f),
+        elevation = 8.dp
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -112,14 +109,11 @@ fun PermissionRationaleDialog(
     onGrant: () -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .shadow(elevation = 16.dp, shape = RoundedCornerShape(20.dp), spotColor = Color.Black.copy(alpha = 0.5f))
-                .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f), RoundedCornerShape(20.dp))
-                .clip(RoundedCornerShape(20.dp)),
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.90f),
-            shape = RoundedCornerShape(20.dp)
+        TexturedGlassSurface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            borderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+            elevation = 16.dp
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
