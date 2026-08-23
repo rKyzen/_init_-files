@@ -1,14 +1,14 @@
-plugins {
+﻿plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.compose.compiler)
   alias(libs.plugins.kotlin.serialization)
 }
 
 android {
-    namespace = "com.init.files"
+    namespace = "com.init.file"
     compileSdk = 36
     defaultConfig {
-        applicationId = "com.init.files"
+        applicationId = "com.init.file"
         minSdk = 26
         targetSdk = 36
         versionCode = 1
