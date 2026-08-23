@@ -39,12 +39,10 @@ sealed interface VaultState {
 }
 
 /**
- * Persistent configuration for Private Vault security.
+ * Persistent configuration for Biometric Private Vault.
  */
 data class VaultConfig(
-    val hasPin: Boolean = false,
-    val hint: String? = null,
-    val biometricsAvailable: Boolean = false,
-    val biometricsEnabled: Boolean = true
+    val isConfigured: Boolean = false,
+    val biometricsAvailable: Boolean = false
 )
 

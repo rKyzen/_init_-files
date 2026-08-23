@@ -24,13 +24,10 @@ import javax.crypto.CipherInputStream
 import javax.crypto.CipherOutputStream
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
-import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.IvParameterSpec
-import javax.crypto.spec.PBEKeySpec
-import javax.crypto.spec.SecretKeySpec
 
 /**
- * Manages zero-knowledge AES-256 encrypted Private Vault storage and PIN/Biometric lifecycle.
+ * Manages zero-knowledge hardware-backed AES-256 encrypted Biometric Private Vault storage.
  */
 class VaultManager(
     private val context: Context,
@@ -44,30 +41,19 @@ class VaultManager(
         if (!exists()) mkdirs()
     }
 
-    private var activeMasterKey: SecretKeySpec? = null
+    private var activeMasterKey: SecretKey? = null
 
     companion object {
-        private const val KEY_ALGORITHM = "AES"
-        private const val CIPHER_TRANSFORMATION = "AES/CBC/PKCS5Padding"
-        private const val KEYSTORE_TRANSFORMATION = "AES/CBC/PKCS7Padding"
+        private const val CIPHER_TRANSFORMATION = "AES/CBC/PKCS7Padding"
         private const val KEYSTORE_PROVIDER = "AndroidKeyStore"
-        private const val KEYSTORE_ALIAS = "InitFilesVaultBiometricKey"
-        private const val PBKDF2_ALGORITHM = "PBKDF2WithHmacSHA256"
-        private const val ITERATION_COUNT = 10_000
-        private const val KEY_LENGTH_BITS = 256
-        private const val SALT_BYTES = 16
+        private const val KEYSTORE_ALIAS = "InitVaultBiometricMasterKey"
         private const val IV_BYTES = 16
 
-        private const val PREF_PIN_HASH = "vault_pin_hash"
-        private const val PREF_PIN_SALT = "vault_pin_salt"
-        private const val PREF_PIN_HINT = "vault_pin_hint"
-        private const val PREF_BIOMETRICS_ENABLED = "vault_biometrics_enabled"
-        private const val PREF_BIOMETRIC_IV = "vault_biometric_iv"
-        private const val PREF_BIOMETRIC_TOKEN = "vault_biometric_token"
+        private const val PREF_VAULT_CONFIGURED = "vault_biometric_configured"
     }
 
     /**
-     * Checks if biometric hardware is present, enrolled, and supported on this device.
+     * Checks if biometric hardware / device credentials are present and supported.
      */
     fun canAuthenticateWithBiometrics(): Boolean {
         return try {
@@ -80,62 +66,33 @@ class VaultManager(
     }
 
     /**
-     * Checks if a master PIN is already configured for the vault.
+     * Checks if the Biometric Private Vault is configured.
      */
     suspend fun isVaultConfigured(): Boolean = withContext(Dispatchers.IO) {
-        val hash = getPreference(PREF_PIN_HASH)
-        !hash.isNullOrBlank()
+        val configured = getPreference(PREF_VAULT_CONFIGURED)
+        configured == "true"
     }
 
     /**
-     * Returns the vault security config including biometrics support and hint.
+     * Returns the biometric vault security config.
      */
     suspend fun getVaultConfig(): VaultConfig = withContext(Dispatchers.IO) {
-        val hasPin = isVaultConfigured()
-        val hint = getPreference(PREF_PIN_HINT)
-        val bioPref = getPreference(PREF_BIOMETRICS_ENABLED)?.toBoolean() ?: true
+        val configured = isVaultConfigured()
         val bioAvailable = canAuthenticateWithBiometrics()
         VaultConfig(
-            hasPin = hasPin,
-            hint = hint,
-            biometricsAvailable = bioAvailable,
-            biometricsEnabled = bioPref
+            isConfigured = configured,
+            biometricsAvailable = bioAvailable
         )
     }
 
     /**
-     * Sets whether biometric unlock should be allowed for this vault.
+     * Activates / initializes the Biometric Private Vault.
      */
-    suspend fun setBiometricsEnabled(enabled: Boolean) = withContext(Dispatchers.IO) {
-        setPreference(PREF_BIOMETRICS_ENABLED, enabled.toString())
-    }
-
-    /**
-     * Configures or resets the master PIN for the Private Vault.
-     */
-    suspend fun setupMasterPin(pin: String, hint: String? = null): Boolean = withContext(Dispatchers.IO) {
+    suspend fun initializeBiometricVault(): Boolean = withContext(Dispatchers.IO) {
         try {
-            val random = SecureRandom()
-            val salt = ByteArray(SALT_BYTES)
-            random.nextBytes(salt)
-
-            val key = deriveKey(pin, salt)
-            val saltHex = bytesToHex(salt)
-            val hashHex = bytesToHex(key.encoded)
-
-            setPreference(PREF_PIN_SALT, saltHex)
-            setPreference(PREF_PIN_HASH, hashHex)
-            if (!hint.isNullOrBlank()) {
-                setPreference(PREF_PIN_HINT, hint.trim())
-            } else {
-                deletePreference(PREF_PIN_HINT)
-            }
-
+            val key = getOrCreateKeyStoreKey()
             activeMasterKey = key
-
-            // Store KeyStore-encrypted PIN token for biometric unlock
-            storeBiometricToken(pin)
-
+            setPreference(PREF_VAULT_CONFIGURED, "true")
             true
         } catch (_: Exception) {
             false
@@ -143,67 +100,31 @@ class VaultManager(
     }
 
     /**
-     * Verifies the entered PIN against the stored PBKDF2 hash and unlocks the session.
+     * Unlocks the vault upon successful biometric authentication.
      */
-    suspend fun verifyAndUnlock(pin: String): Boolean = withContext(Dispatchers.IO) {
+    suspend fun unlockWithBiometrics(): Boolean = withContext(Dispatchers.IO) {
         try {
-            val storedSaltHex = getPreference(PREF_PIN_SALT) ?: return@withContext false
-            val storedHashHex = getPreference(PREF_PIN_HASH) ?: return@withContext false
-
-            val salt = hexToBytes(storedSaltHex)
-            val key = deriveKey(pin, salt)
-            val computedHashHex = bytesToHex(key.encoded)
-
-            if (storedHashHex.equals(computedHashHex, ignoreCase = true)) {
-                activeMasterKey = key
-                // Keep biometric token fresh
-                storeBiometricToken(pin)
-                true
-            } else {
-                false
-            }
+            val key = getOrCreateKeyStoreKey()
+            activeMasterKey = key
+            setPreference(PREF_VAULT_CONFIGURED, "true")
+            true
         } catch (_: Exception) {
             false
         }
     }
 
     /**
-     * Unlocks the vault using the Android KeyStore biometric token.
+     * Locks the vault by clearing the master key from memory.
      */
-    suspend fun unlockWithBiometrics(): Boolean = withContext(Dispatchers.IO) {
-        try {
-            val ivHex = getPreference(PREF_BIOMETRIC_IV) ?: return@withContext false
-            val tokenHex = getPreference(PREF_BIOMETRIC_TOKEN) ?: return@withContext false
-
-            val iv = hexToBytes(ivHex)
-            val encryptedToken = hexToBytes(tokenHex)
-
-            val keyStoreKey = getOrCreateKeyStoreKey()
-            val cipher = Cipher.getInstance(KEYSTORE_TRANSFORMATION)
-            cipher.init(Cipher.DECRYPT_MODE, keyStoreKey, IvParameterSpec(iv))
-
-            val decryptedBytes = cipher.doFinal(encryptedToken)
-            val pin = String(decryptedBytes, Charsets.UTF_8)
-
-            verifyAndUnlock(pin)
-        } catch (_: Exception) {
-            false
-        }
+    fun lock() {
+        activeMasterKey = null
+        clearTempCache()
     }
 
-    private fun storeBiometricToken(pin: String) {
-        try {
-            val keyStoreKey = getOrCreateKeyStoreKey()
-            val cipher = Cipher.getInstance(KEYSTORE_TRANSFORMATION)
-            cipher.init(Cipher.ENCRYPT_MODE, keyStoreKey)
-
-            val iv = cipher.iv
-            val encryptedBytes = cipher.doFinal(pin.toByteArray(Charsets.UTF_8))
-
-            setPreference(PREF_BIOMETRIC_IV, bytesToHex(iv))
-            setPreference(PREF_BIOMETRIC_TOKEN, bytesToHex(encryptedBytes))
-        } catch (_: Exception) {}
-    }
+    /**
+     * Returns true if the vault is currently unlocked.
+     */
+    fun isUnlocked(): Boolean = activeMasterKey != null
 
     private fun getOrCreateKeyStoreKey(): SecretKey {
         val keyStore = KeyStore.getInstance(KEYSTORE_PROVIDER).apply { load(null) }
@@ -225,19 +146,6 @@ class VaultManager(
         keyGenerator.init(keyGenSpec)
         return keyGenerator.generateKey()
     }
-
-    /**
-     * Locks the vault by clearing the cryptographic key in memory.
-     */
-    fun lock() {
-        activeMasterKey = null
-        clearTempCache()
-    }
-
-    /**
-     * Returns true if the vault is currently unlocked and key is available in memory.
-     */
-    fun isUnlocked(): Boolean = activeMasterKey != null
 
     /**
      * Encrypts an external file and moves it securely into the vault.
@@ -485,13 +393,6 @@ class VaultManager(
 
     // --- Private Cryptographic & Preference Helpers ---
 
-    private fun deriveKey(pin: String, salt: ByteArray): SecretKeySpec {
-        val spec = PBEKeySpec(pin.toCharArray(), salt, ITERATION_COUNT, KEY_LENGTH_BITS)
-        val factory = SecretKeyFactory.getInstance(PBKDF2_ALGORITHM)
-        val keyBytes = factory.generateSecret(spec).encoded
-        return SecretKeySpec(keyBytes, KEY_ALGORITHM)
-    }
-
     private fun getPreference(key: String): String? {
         val db = dbHelper.readableDatabase
         val cursor = db.query(
@@ -520,35 +421,9 @@ class VaultManager(
         )
     }
 
-    private fun deletePreference(key: String) {
-        val db = dbHelper.writableDatabase
-        db.delete(InitDatabaseHelper.TABLE_PREFERENCES, "key = ?", arrayOf(key))
-    }
-
-    private fun bytesToHex(bytes: ByteArray): String {
-        val hexChars = "0123456789ABCDEF"
-        val result = StringBuilder(bytes.size * 2)
-        for (byte in bytes) {
-            val i = byte.toInt()
-            result.append(hexChars[i shr 4 and 0x0f])
-            result.append(hexChars[i and 0x0f])
-        }
-        return result.toString()
-    }
-
-    private fun hexToBytes(hex: String): ByteArray {
-        val len = hex.length
-        val data = ByteArray(len / 2)
-        var i = 0
-        while (i < len) {
-            data[i / 2] = ((Character.digit(hex[i], 16) shl 4) + Character.digit(hex[i + 1], 16)).toByte()
-            i += 2
-        }
-        return data
-    }
-
     private fun getMimeType(file: File): String {
         val ext = file.name.substringAfterLast('.', "").lowercase()
         return android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext) ?: "application/octet-stream"
     }
 }
+

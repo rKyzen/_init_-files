@@ -10,9 +10,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.security.SecureRandom
 import javax.crypto.Cipher
-import javax.crypto.SecretKeyFactory
+import javax.crypto.KeyGenerator
+import javax.crypto.SecretKey
 import javax.crypto.spec.IvParameterSpec
-import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
 
 class VaultModelsAndCryptoTest {
@@ -36,18 +36,12 @@ class VaultModelsAndCryptoTest {
     }
 
     @Test
-    fun testPbkdf2AndAes256EncryptionDecryptionCycle() {
-        val pin = "1337"
-        val salt = ByteArray(16).apply { SecureRandom().nextBytes(this) }
+    fun testAes256BiometricEncryptionDecryptionCycle() {
+        val keyGen = KeyGenerator.getInstance("AES")
+        keyGen.init(256)
+        val secretKey: SecretKey = keyGen.generateKey()
 
-        // Key derivation
-        val spec = PBEKeySpec(pin.toCharArray(), salt, 10_000, 256)
-        val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
-        val keyBytes = factory.generateSecret(spec).encoded
-        val secretKey = SecretKeySpec(keyBytes, "AES")
-
-        // Encryption
-        val originalPlaintext = "CONFIDENTIAL_PAYLOAD_INIT_FILES_2026".toByteArray(Charsets.UTF_8)
+        val originalPlaintext = "CONFIDENTIAL_PAYLOAD_INIT_BIOMETRIC_VAULT_2026".toByteArray(Charsets.UTF_8)
         val iv = ByteArray(16).apply { SecureRandom().nextBytes(this) }
         val ivSpec = IvParameterSpec(iv)
 
@@ -57,25 +51,20 @@ class VaultModelsAndCryptoTest {
 
         assertFalse(originalPlaintext.contentEquals(ciphertext))
 
-        // Decryption with same derived key
         val cipherDecrypt = Cipher.getInstance("AES/CBC/PKCS5Padding")
         cipherDecrypt.init(Cipher.DECRYPT_MODE, secretKey, ivSpec)
         val decryptedBytes = cipherDecrypt.doFinal(ciphertext)
 
         assertArrayEquals(originalPlaintext, decryptedBytes)
-        assertEquals("CONFIDENTIAL_PAYLOAD_INIT_FILES_2026", String(decryptedBytes, Charsets.UTF_8))
+        assertEquals("CONFIDENTIAL_PAYLOAD_INIT_BIOMETRIC_VAULT_2026", String(decryptedBytes, Charsets.UTF_8))
     }
 
     @Test
-    fun testIncorrectPinFailsDecryption() {
-        val pin = "1234"
-        val wrongPin = "9999"
-        val salt = ByteArray(16).apply { SecureRandom().nextBytes(this) }
-
-        val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
-
-        val key1 = SecretKeySpec(factory.generateSecret(PBEKeySpec(pin.toCharArray(), salt, 10_000, 256)).encoded, "AES")
-        val key2 = SecretKeySpec(factory.generateSecret(PBEKeySpec(wrongPin.toCharArray(), salt, 10_000, 256)).encoded, "AES")
+    fun testWrongKeyFailsDecryption() {
+        val keyGen = KeyGenerator.getInstance("AES")
+        keyGen.init(256)
+        val key1 = keyGen.generateKey()
+        val key2 = keyGen.generateKey()
 
         val originalPlaintext = "SECRET_DOCUMENT_BODY".toByteArray(Charsets.UTF_8)
         val iv = ByteArray(16).apply { SecureRandom().nextBytes(this) }
@@ -96,3 +85,4 @@ class VaultModelsAndCryptoTest {
         assertTrue("Decryption with wrong key must fail", failed)
     }
 }
+

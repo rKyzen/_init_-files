@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.FolderSpecial
 import androidx.compose.material.icons.filled.Image
@@ -192,7 +193,7 @@ fun HomeScreen(
 
                     HomeDrawerItem(
                         label = "private vault",
-                        icon = Icons.Default.Security,
+                        icon = Icons.Default.Fingerprint,
                         onClick = {
                             scope.launch { drawerState.close() }
                             onNavigateToVault()
@@ -504,8 +505,8 @@ fun HomeScreen(
                         ) {
                             UtilityShortcutCard(
                                 title = "SAFE VAULT",
-                                subtitle = "Biometric & PIN",
-                                icon = Icons.Default.Security,
+                                subtitle = "Biometric safe",
+                                icon = Icons.Default.Fingerprint,
                                 modifier = Modifier.weight(1f),
                                 onClick = onNavigateToVault
                             )

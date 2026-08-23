@@ -1,5 +1,6 @@
 package com.init.files.ui.screens.vault
 
+import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
@@ -16,12 +17,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.io.File
 
-enum class VaultSetupStep {
-    ENTER_NEW_PIN,
-    CONFIRM_NEW_PIN,
-    ENTER_HINT
-}
-
 class VaultViewModel(
     private val vaultManager: VaultManager
 ) : ViewModel() {
@@ -29,22 +24,11 @@ class VaultViewModel(
     private val _uiState = MutableStateFlow<VaultState>(VaultState.Locked)
     val uiState: StateFlow<VaultState> = _uiState.asStateFlow()
 
-    private val _pinInput = MutableStateFlow("")
-    val pinInput: StateFlow<String> = _pinInput.asStateFlow()
-
-    private val _setupStep = MutableStateFlow(VaultSetupStep.ENTER_NEW_PIN)
-    val setupStep: StateFlow<VaultSetupStep> = _setupStep.asStateFlow()
-
-    private val _hintInput = MutableStateFlow("")
-    val hintInput: StateFlow<String> = _hintInput.asStateFlow()
-
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
     private val _vaultConfig = MutableStateFlow(VaultConfig())
     val vaultConfig: StateFlow<VaultConfig> = _vaultConfig.asStateFlow()
-
-    private var tempNewPin: String = ""
 
     init {
         checkVaultStatus()
@@ -58,7 +42,6 @@ class VaultViewModel(
 
             if (!isConfigured) {
                 _uiState.value = VaultState.Uninitialized
-                _setupStep.value = VaultSetupStep.ENTER_NEW_PIN
             } else if (vaultManager.isUnlocked()) {
                 loadVaultItems()
             } else {
@@ -67,21 +50,21 @@ class VaultViewModel(
         }
     }
 
-    fun launchBiometrics(activity: FragmentActivity) {
-        val config = _vaultConfig.value
-        if (!config.biometricsAvailable || !config.biometricsEnabled || _uiState.value !is VaultState.Locked) {
-            return
-        }
-
+    fun authenticateWithBiometrics(activity: FragmentActivity) {
         val executor = ContextCompat.getMainExecutor(activity)
         val prompt = BiometricPrompt(activity, executor, object : BiometricPrompt.AuthenticationCallback() {
             override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                 super.onAuthenticationSucceeded(result)
                 viewModelScope.launch {
-                    val success = vaultManager.unlockWithBiometrics()
+                    val success = if (_uiState.value is VaultState.Uninitialized) {
+                        vaultManager.initializeBiometricVault()
+                    } else {
+                        vaultManager.unlockWithBiometrics()
+                    }
+
                     if (success) {
-                        _pinInput.value = ""
                         _errorMessage.value = null
+                        _vaultConfig.value = vaultManager.getVaultConfig()
                         loadVaultItems()
                     } else {
                         _errorMessage.value = "BIOMETRIC AUTHENTICATION FAILED"
@@ -101,114 +84,19 @@ class VaultViewModel(
         })
 
         val promptInfo = BiometricPrompt.PromptInfo.Builder()
-            .setTitle("UNLOCK PRIVATE VAULT")
+            .setTitle(if (_uiState.value is VaultState.Uninitialized) "ACTIVATE BIOMETRIC VAULT" else "UNLOCK PRIVATE VAULT")
             .setSubtitle("Touch fingerprint sensor or face recognition")
-            .setNegativeButtonText("USE MASTER PIN")
+            .setAllowedAuthenticators(
+                BiometricManager.Authenticators.BIOMETRIC_STRONG or
+                    BiometricManager.Authenticators.DEVICE_CREDENTIAL
+            )
             .build()
 
         prompt.authenticate(promptInfo)
     }
 
-    fun toggleBiometrics(enabled: Boolean) {
-        viewModelScope.launch {
-            vaultManager.setBiometricsEnabled(enabled)
-            _vaultConfig.value = vaultManager.getVaultConfig()
-        }
-    }
-
-    fun onDigitPress(digit: String) {
-        if (_pinInput.value.length < 6) {
-            _pinInput.value += digit
-            _errorMessage.value = null
-
-            // Auto-submit on 4 or 6 digits if desired or upon manual submit
-            if (_pinInput.value.length == 4 && _uiState.value is VaultState.Locked) {
-                submitPin()
-            }
-        }
-    }
-
-    fun onBackspacePress() {
-        if (_pinInput.value.isNotEmpty()) {
-            _pinInput.value = _pinInput.value.dropLast(1)
-            _errorMessage.value = null
-        }
-    }
-
-    fun onClearPress() {
-        _pinInput.value = ""
-        _errorMessage.value = null
-    }
-
-    fun onHintChange(hint: String) {
-        _hintInput.value = hint
-    }
-
-    fun submitPin() {
-        val pin = _pinInput.value.trim()
-        if (pin.length < 4) {
-            _errorMessage.value = "PIN MUST BE AT LEAST 4 DIGITS"
-            return
-        }
-
-        viewModelScope.launch {
-            when (_uiState.value) {
-                is VaultState.Uninitialized -> {
-                    when (_setupStep.value) {
-                        VaultSetupStep.ENTER_NEW_PIN -> {
-                            tempNewPin = pin
-                            _pinInput.value = ""
-                            _setupStep.value = VaultSetupStep.CONFIRM_NEW_PIN
-                        }
-                        VaultSetupStep.CONFIRM_NEW_PIN -> {
-                            if (pin == tempNewPin) {
-                                _pinInput.value = ""
-                                _setupStep.value = VaultSetupStep.ENTER_HINT
-                            } else {
-                                _errorMessage.value = "PINS DO NOT MATCH. RETRY."
-                                _pinInput.value = ""
-                                _setupStep.value = VaultSetupStep.ENTER_NEW_PIN
-                            }
-                        }
-                        VaultSetupStep.ENTER_HINT -> {
-                            finalizeVaultSetup()
-                        }
-                    }
-                }
-                is VaultState.Locked -> {
-                    val success = vaultManager.verifyAndUnlock(pin)
-                    if (success) {
-                        _pinInput.value = ""
-                        _errorMessage.value = null
-                        loadVaultItems()
-                    } else {
-                        _errorMessage.value = "AUTHENTICATION FAILED: INVALID PIN"
-                        _pinInput.value = ""
-                    }
-                }
-                else -> {}
-            }
-        }
-    }
-
-    fun finalizeVaultSetup() {
-        viewModelScope.launch {
-            val hint = _hintInput.value.trim().takeIf { it.isNotBlank() }
-            val success = vaultManager.setupMasterPin(tempNewPin, hint)
-            if (success) {
-                _pinInput.value = ""
-                _hintInput.value = ""
-                _vaultConfig.value = vaultManager.getVaultConfig()
-                loadVaultItems()
-            } else {
-                _errorMessage.value = "FAILED TO INITIALIZE VAULT ENCRYPTION"
-            }
-        }
-    }
-
     fun lockVault() {
         vaultManager.lock()
-        _pinInput.value = ""
         _errorMessage.value = null
         _uiState.value = VaultState.Locked
     }
@@ -317,3 +205,4 @@ class VaultViewModel(
         vaultManager.clearTempCache()
     }
 }
+
