@@ -11,13 +11,14 @@ class InitDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_
 
     companion object {
         const val DATABASE_NAME = "init_files.db"
-        const val DATABASE_VERSION = 2
+        const val DATABASE_VERSION = 3
 
         const val TABLE_PINNED = "pinned_folders"
         const val TABLE_RECENTS = "recent_files"
         const val TABLE_SEARCH = "search_history"
         const val TABLE_PREFERENCES = "preferences"
         const val TABLE_TRASH = "trash_items"
+        const val TABLE_VAULT = "vault_items"
     }
 
     override fun onCreate(db: SQLiteDatabase) {
@@ -75,6 +76,21 @@ class InitDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_
             """.trimIndent()
         )
 
+        db.execSQL(
+            """
+            CREATE TABLE $TABLE_VAULT (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                original_path TEXT NOT NULL,
+                vault_path TEXT NOT NULL UNIQUE,
+                name TEXT NOT NULL,
+                size INTEGER NOT NULL,
+                encrypted_at INTEGER NOT NULL,
+                mime_type TEXT,
+                is_directory INTEGER NOT NULL DEFAULT 0
+            )
+            """.trimIndent()
+        )
+
         // Default preferences
         db.execSQL("INSERT INTO $TABLE_PREFERENCES VALUES ('theme_mode', 'DARK')")
         db.execSQL("INSERT INTO $TABLE_PREFERENCES VALUES ('view_mode', 'LIST')")
@@ -94,6 +110,22 @@ class InitDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_
                     name TEXT NOT NULL,
                     size INTEGER NOT NULL,
                     deleted_at INTEGER NOT NULL,
+                    is_directory INTEGER NOT NULL DEFAULT 0
+                )
+                """.trimIndent()
+            )
+        }
+        if (oldVersion < 3) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS $TABLE_VAULT (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    original_path TEXT NOT NULL,
+                    vault_path TEXT NOT NULL UNIQUE,
+                    name TEXT NOT NULL,
+                    size INTEGER NOT NULL,
+                    encrypted_at INTEGER NOT NULL,
+                    mime_type TEXT,
                     is_directory INTEGER NOT NULL DEFAULT 0
                 )
                 """.trimIndent()

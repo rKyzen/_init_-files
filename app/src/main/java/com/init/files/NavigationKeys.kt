@@ -29,3 +29,10 @@ data object SettingsNavKey : NavKey
 
 @Serializable
 data object TrashNavKey : NavKey
+
+@Serializable
+data object VaultNavKey : NavKey
+
+@Serializable
+data object DuplicateNavKey : NavKey
+

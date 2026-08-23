@@ -90,7 +90,8 @@ fun StorageAnalyzerScreen(
     viewModel: AnalyzerViewModel,
     onNavigateBack: () -> Unit,
     onOpenFilePreview: (FileItem) -> Unit,
-    onNavigateToFolder: (String) -> Unit
+    onNavigateToFolder: (String) -> Unit,
+    onNavigateToDuplicateFinder: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val state by viewModel.uiState.collectAsState()
@@ -172,6 +173,50 @@ fun StorageAnalyzerScreen(
                             isCleaning = state.isCleaning,
                             onClean = { showJunkConfirm = true }
                         )
+                    }
+
+                    // Duplicate Cleaner Section
+                    item {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        InitSectionHeader(title = "duplicate file cleanup")
+                        InitCard(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp),
+                            onClick = onNavigateToDuplicateFinder
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "DUPLICATE FINDER",
+                                        fontFamily = MichromaFontFamily,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        letterSpacing = 1.sp,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = "Scan storage for byte-for-byte identical files and reclaim wasted space.",
+                                        fontFamily = JetBrainsMonoFontFamily,
+                                        fontSize = 10.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                InitButton(
+                                    text = "SCAN",
+                                    isPrimary = true,
+                                    onClick = onNavigateToDuplicateFinder
+                                )
+                            }
+                        }
                     }
 
                     // Largest Files Section

@@ -24,6 +24,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.DataUsage
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.ChevronRight
@@ -38,6 +39,7 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.CircularProgressIndicator
@@ -102,6 +104,8 @@ fun HomeScreen(
     onNavigateToSearch: () -> Unit,
     onNavigateToAnalyzer: () -> Unit,
     onNavigateToSettings: () -> Unit,
+    onNavigateToVault: () -> Unit,
+    onNavigateToDuplicateFinder: () -> Unit,
     onOpenFilePreview: (FileItem) -> Unit
 ) {
     val context = LocalContext.current
@@ -183,6 +187,24 @@ fun HomeScreen(
                         onClick = {
                             scope.launch { drawerState.close() }
                             onNavigateToAnalyzer()
+                        }
+                    )
+
+                    HomeDrawerItem(
+                        label = "private vault",
+                        icon = Icons.Default.Security,
+                        onClick = {
+                            scope.launch { drawerState.close() }
+                            onNavigateToVault()
+                        }
+                    )
+
+                    HomeDrawerItem(
+                        label = "duplicate finder",
+                        icon = Icons.Default.ContentCopy,
+                        onClick = {
+                            scope.launch { drawerState.close() }
+                            onNavigateToDuplicateFinder()
                         }
                     )
 
@@ -470,6 +492,29 @@ fun HomeScreen(
                                 totalSizeBytes = state.trashSizeBytes,
                                 modifier = Modifier.weight(1f),
                                 onClick = onNavigateToTrash
+                            )
+                        }
+
+                        // Row 5: SAFE VAULT, DUPLICATE FINDER
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            UtilityShortcutCard(
+                                title = "SAFE VAULT",
+                                subtitle = "AES-256 secure",
+                                icon = Icons.Default.Security,
+                                modifier = Modifier.weight(1f),
+                                onClick = onNavigateToVault
+                            )
+                            UtilityShortcutCard(
+                                title = "DUPLICATES",
+                                subtitle = "Find & reclaim",
+                                icon = Icons.Default.ContentCopy,
+                                modifier = Modifier.weight(1f),
+                                onClick = onNavigateToDuplicateFinder
                             )
                         }
                     }
@@ -987,3 +1032,67 @@ fun RecentFileRow(
         }
     }
 }
+
+/**
+ * Tactical utility shortcut card on Home screen for Vault & Duplicate Finder.
+ */
+@Composable
+fun UtilityShortcutCard(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    InitCard(
+        modifier = modifier,
+        onClick = onClick
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(10.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title.lowercase(),
+                    fontFamily = MichromaFontFamily,
+                    fontSize = 11.sp,
+                    letterSpacing = 0.8.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = subtitle,
+                    fontFamily = JetBrainsMonoFontFamily,
+                    fontSize = 10.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+    }
+}
+

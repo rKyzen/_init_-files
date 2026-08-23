@@ -26,6 +26,8 @@ import androidx.navigation3.ui.NavDisplay
 import com.init.files.data.local.InitDatabaseHelper
 import com.init.files.data.local.LocalRepository
 import com.init.files.data.storage.FileManager
+import com.init.files.data.storage.DuplicateScanner
+import com.init.files.data.vault.VaultManager
 import com.init.files.domain.model.FileCategory
 import com.init.files.domain.model.FileItem
 import com.init.files.domain.model.categorizeFile
@@ -35,6 +37,8 @@ import com.init.files.ui.screens.browse.BrowseScreen
 import com.init.files.ui.screens.browse.BrowseViewModel
 import com.init.files.ui.screens.category.CategoryScreen
 import com.init.files.ui.screens.category.CategoryViewModel
+import com.init.files.ui.screens.duplicate.DuplicateFinderScreen
+import com.init.files.ui.screens.duplicate.DuplicateViewModel
 import com.init.files.ui.screens.home.HomeScreen
 import com.init.files.ui.screens.home.HomeViewModel
 import com.init.files.ui.screens.preview.FilePreviewSheet
@@ -46,6 +50,8 @@ import com.init.files.ui.screens.settings.SettingsViewModel
 import com.init.files.ui.screens.splash.SplashScreen
 import com.init.files.ui.screens.trash.TrashScreen
 import com.init.files.ui.screens.trash.TrashViewModel
+import com.init.files.ui.screens.vault.VaultScreen
+import com.init.files.ui.screens.vault.VaultViewModel
 import java.io.File
 
 private val FluidDecelEasing = CubicBezierEasing(0.08f, 0.95f, 0.12f, 1.0f)
@@ -59,6 +65,8 @@ fun MainNavigation(localRepository: LocalRepository? = null) {
     val dbHelper = remember { InitDatabaseHelper(context) }
     val repo = remember(localRepository) { localRepository ?: LocalRepository(dbHelper) }
     val fileManager = remember { FileManager(context) }
+    val vaultManager = remember { VaultManager(context, dbHelper) }
+    val duplicateScanner = remember { DuplicateScanner(context, fileManager) }
 
     val homeViewModel = remember { HomeViewModel(fileManager, repo) }
     val browseViewModel = remember { BrowseViewModel(fileManager, repo) }
@@ -68,6 +76,9 @@ fun MainNavigation(localRepository: LocalRepository? = null) {
     val settingsViewModel = remember { SettingsViewModel(repo) }
     val categoryViewModel = remember { CategoryViewModel(fileManager, repo) }
     val trashViewModel = remember { TrashViewModel(fileManager, repo) }
+    val vaultViewModel = remember { VaultViewModel(vaultManager) }
+    val duplicateViewModel = remember { DuplicateViewModel(duplicateScanner) }
+
 
     NavDisplay(
         backStack = backStack,
@@ -181,6 +192,14 @@ fun MainNavigation(localRepository: LocalRepository? = null) {
                     onNavigateToSettings = {
                         backStack.add(SettingsNavKey)
                     },
+                    onNavigateToVault = {
+                        vaultViewModel.checkVaultStatus()
+                        backStack.add(VaultNavKey)
+                    },
+                    onNavigateToDuplicateFinder = {
+                        duplicateViewModel.startScan()
+                        backStack.add(DuplicateNavKey)
+                    },
                     onOpenFilePreview = { fileItem ->
                         backStack.add(PreviewNavKey(fileItem.path))
                     }
@@ -251,6 +270,10 @@ fun MainNavigation(localRepository: LocalRepository? = null) {
                     onNavigateToFolder = { path ->
                         browseViewModel.navigateTo(path)
                         backStack.add(BrowseNavKey(path))
+                    },
+                    onNavigateToDuplicateFinder = {
+                        duplicateViewModel.startScan()
+                        backStack.add(DuplicateNavKey)
                     }
                 )
             }
@@ -278,6 +301,26 @@ fun MainNavigation(localRepository: LocalRepository? = null) {
                 SettingsScreen(
                     viewModel = settingsViewModel,
                     onNavigateBack = { backStack.removeLastOrNull() }
+                )
+            }
+
+            entry<VaultNavKey> {
+                VaultScreen(
+                    viewModel = vaultViewModel,
+                    onNavigateBack = { backStack.removeLastOrNull() },
+                    onOpenFilePreview = { fileItem ->
+                        backStack.add(PreviewNavKey(fileItem.path))
+                    }
+                )
+            }
+
+            entry<DuplicateNavKey> {
+                DuplicateFinderScreen(
+                    viewModel = duplicateViewModel,
+                    onNavigateBack = { backStack.removeLastOrNull() },
+                    onOpenFilePreview = { fileItem ->
+                        backStack.add(PreviewNavKey(fileItem.path))
+                    }
                 )
             }
         }
