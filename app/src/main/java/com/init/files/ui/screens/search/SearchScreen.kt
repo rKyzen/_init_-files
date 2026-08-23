@@ -55,6 +55,7 @@ import com.init.files.domain.model.FileItem
 import com.init.files.theme.JetBrainsMonoFontFamily
 import com.init.files.theme.MichromaFontFamily
 import com.init.files.ui.components.DotMatrixEmptyPattern
+import com.init.files.ui.components.FileThumbnail
 import com.init.files.ui.components.InitSectionHeader
 import com.init.files.ui.components.InitVideoLoading
 import com.init.files.ui.screens.browse.getFileIcon
@@ -369,11 +370,11 @@ fun SearchResultRow(
                 .padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = getFileIcon(item),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.size(20.dp)
+            FileThumbnail(
+                item = item,
+                modifier = Modifier.size(36.dp),
+                shape = RoundedCornerShape(8.dp),
+                iconSize = 18.dp
             )
 
             Spacer(modifier = Modifier.width(12.dp))

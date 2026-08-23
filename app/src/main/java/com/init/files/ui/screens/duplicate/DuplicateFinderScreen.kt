@@ -80,6 +80,7 @@ import com.init.files.theme.SignalAccent
 import com.init.files.theme.surfaceElevated
 import com.init.files.ui.components.ConfirmationDialog
 import com.init.files.ui.components.DotMatrixEmptyPattern
+import com.init.files.ui.components.FileThumbnail
 import com.init.files.ui.components.InitBadge
 import com.init.files.ui.components.InitButton
 import com.init.files.ui.components.InitCard
@@ -535,21 +536,12 @@ fun DuplicateGroupCard(
                     modifier = Modifier.weight(1f),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Surface(
-                        modifier = Modifier.size(32.dp),
+                    FileThumbnail(
+                        item = group.primaryFile,
+                        modifier = Modifier.size(36.dp),
                         shape = RoundedCornerShape(8.dp),
-                        color = MaterialTheme.colorScheme.surfaceElevated,
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = getCategoryIcon(group.primaryFile.category),
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                    }
+                        iconSize = 18.dp
+                    )
 
                     Spacer(modifier = Modifier.width(10.dp))
 

@@ -85,6 +85,7 @@ import com.init.files.domain.model.formatByteSize
 import com.init.files.theme.JetBrainsMonoFontFamily
 import com.init.files.theme.MichromaFontFamily
 import com.init.files.theme.SignalAccent
+import com.init.files.ui.components.FileThumbnail
 import com.init.files.ui.components.InitBadge
 import com.init.files.ui.components.InitCard
 import com.init.files.ui.components.InitSectionHeader
@@ -960,17 +961,11 @@ fun RecentFileRow(
                 .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = when (file.category) {
-                    FileCategory.IMAGES -> Icons.Default.Image
-                    FileCategory.VIDEOS -> Icons.Default.Movie
-                    FileCategory.AUDIO -> Icons.Default.MusicNote
-                    FileCategory.DOCUMENTS -> Icons.Default.Description
-                    else -> Icons.AutoMirrored.Filled.InsertDriveFile
-                },
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.size(18.dp)
+            FileThumbnail(
+                item = file,
+                modifier = Modifier.size(36.dp),
+                shape = RoundedCornerShape(8.dp),
+                iconSize = 18.dp
             )
 
             Spacer(modifier = Modifier.width(10.dp))

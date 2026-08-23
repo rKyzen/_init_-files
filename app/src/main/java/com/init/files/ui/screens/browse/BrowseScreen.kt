@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -36,7 +37,10 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.layout.ContentScale
+import com.init.files.ui.components.FileThumbnail
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
@@ -92,6 +96,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -480,9 +485,11 @@ fun BrowseScreen(
                         }
                     } else {
                         LazyVerticalGrid(
-                            columns = GridCells.Adaptive(minSize = 100.dp),
+                            columns = GridCells.Adaptive(minSize = 104.dp),
                             modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 96.dp)
+                            contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 96.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             items(
                                 items = state.items,
@@ -643,15 +650,12 @@ fun FileItemRow(
                 Spacer(modifier = Modifier.width(10.dp))
             }
 
-            // Category Outline Glyph Icon
-            val iconVector = getFileIcon(item)
-            val iconTint = MaterialTheme.colorScheme.onSurface
-
-            Icon(
-                imageVector = iconVector,
-                contentDescription = null,
-                tint = iconTint,
-                modifier = Modifier.size(22.dp)
+            FileThumbnail(
+                item = item,
+                modifier = Modifier.size(38.dp),
+                shape = RoundedCornerShape(10.dp),
+                iconSize = 20.dp,
+                contentScale = ContentScale.Crop
             )
 
             Spacer(modifier = Modifier.width(12.dp))
@@ -784,10 +788,10 @@ fun FileItemGridCell(
 ) {
     Surface(
         modifier = Modifier
-            .padding(4.dp)
+            .fillMaxWidth()
             .border(
-                width = 1.dp,
-                color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outlineVariant,
+                width = if (isSelected) 1.5.dp else 1.dp,
+                color = if (isSelected) SignalAccent else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
                 shape = RoundedCornerShape(14.dp)
             )
             .clip(RoundedCornerShape(14.dp))
@@ -800,22 +804,25 @@ fun FileItemGridCell(
     ) {
         Column(
             modifier = Modifier
-                .padding(10.dp)
-                .fillMaxWidth(),
+                .fillMaxWidth()
+                .padding(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Box(
                 modifier = Modifier
-                    .size(44.dp)
-                    .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(10.dp)),
+                    .fillMaxWidth()
+                    .aspectRatio(1f)
+                    .clip(RoundedCornerShape(10.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = getFileIcon(item),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.size(24.dp)
+                FileThumbnail(
+                    item = item,
+                    modifier = Modifier.fillMaxSize(),
+                    shape = RoundedCornerShape(10.dp),
+                    iconSize = 32.dp,
+                    contentScale = ContentScale.Crop
                 )
+
                 if (isSelected) {
                     Box(
                         modifier = Modifier
@@ -823,12 +830,22 @@ fun FileItemGridCell(
                             .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f)),
                         contentAlignment = Alignment.TopEnd
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Check,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(16.dp).padding(2.dp)
-                        )
+                        Surface(
+                            modifier = Modifier
+                                .padding(6.dp)
+                                .size(20.dp),
+                            shape = CircleShape,
+                            color = SignalAccent
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = null,
+                                    tint = Color.Black,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -839,10 +856,13 @@ fun FileItemGridCell(
                 text = item.name,
                 fontFamily = JetBrainsMonoFontFamily,
                 fontSize = 11.sp,
+                fontWeight = FontWeight.Medium,
                 maxLines = 1,
                 softWrap = false,
                 overflow = TextOverflow.Ellipsis,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
             )
 
             Spacer(modifier = Modifier.height(2.dp))
@@ -856,7 +876,8 @@ fun FileItemGridCell(
                 maxLines = 1,
                 softWrap = false,
                 overflow = TextOverflow.Ellipsis,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
             )
         }
     }
