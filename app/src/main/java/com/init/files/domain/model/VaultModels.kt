@@ -43,5 +43,8 @@ sealed interface VaultState {
  */
 data class VaultConfig(
     val hasPin: Boolean = false,
-    val hint: String? = null
+    val hint: String? = null,
+    val biometricsAvailable: Boolean = false,
+    val biometricsEnabled: Boolean = true
 )
+

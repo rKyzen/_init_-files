@@ -16,9 +16,11 @@ lifecycleViewmodelNav3 = "2.10.0"
 coil = "2.7.0"
 workmanager = "2.10.0"
 media3 = "1.5.1"
+androidxBiometric = "1.2.0-alpha05"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidxCore" }
+androidx-biometric = { module = "androidx.biometric:biometric", version.ref = "androidxBiometric" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidxActivity" }
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "androidxComposeBom" }
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3"}

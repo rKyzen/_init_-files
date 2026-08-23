@@ -40,6 +40,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Lock
@@ -61,6 +62,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -114,6 +116,14 @@ fun VaultScreen(
     var showHintDialog by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
+    val activity = context as? androidx.fragment.app.FragmentActivity
+
+    // Auto-launch biometrics on opening locked vault if available and enabled
+    LaunchedEffect(uiState, vaultConfig.biometricsAvailable, vaultConfig.biometricsEnabled) {
+        if (uiState is VaultState.Locked && vaultConfig.biometricsAvailable && vaultConfig.biometricsEnabled && activity != null) {
+            viewModel.launchBiometrics(activity)
+        }
+    }
 
     // File picker to import into vault
     val filePickerLauncher = rememberLauncherForActivityResult(
@@ -167,6 +177,15 @@ fun VaultScreen(
                                 Icon(Icons.Default.Close, contentDescription = "Clear", tint = MaterialTheme.colorScheme.onSurface)
                             }
                         } else {
+                            if (vaultConfig.biometricsAvailable) {
+                                IconButton(onClick = { viewModel.toggleBiometrics(!vaultConfig.biometricsEnabled) }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Fingerprint,
+                                        contentDescription = "Toggle Biometrics",
+                                        tint = if (vaultConfig.biometricsEnabled) SignalAccent else MaterialTheme.colorScheme.outline
+                                    )
+                                }
+                            }
                             IconButton(onClick = { filePickerLauncher.launch(arrayOf("*/*")) }) {
                                 Icon(Icons.Default.Add, contentDescription = "Import Files", tint = SignalAccent)
                             }
@@ -239,7 +258,7 @@ fun VaultScreen(
                 is VaultState.Locked -> {
                     VaultPinTerminal(
                         title = "VAULT LOCKED",
-                        subtitle = "Enter your Master PIN to decrypt and access confidential files.",
+                        subtitle = "Enter your Master PIN or authenticate with Biometrics to access vault.",
                         pinInput = pinInput,
                         errorMessage = errorMessage,
                         isHintStep = false,
@@ -248,7 +267,10 @@ fun VaultScreen(
                         onDigitPress = { viewModel.onDigitPress(it) },
                         onBackspacePress = { viewModel.onBackspacePress() },
                         onClearPress = { viewModel.onClearPress() },
-                        onSubmitPress = { viewModel.submitPin() }
+                        onSubmitPress = { viewModel.submitPin() },
+                        onBiometricPress = if (vaultConfig.biometricsAvailable && vaultConfig.biometricsEnabled && activity != null) {
+                            { viewModel.launchBiometrics(activity) }
+                        } else null
                     )
                 }
 
@@ -476,13 +498,14 @@ fun VaultPinTerminal(
     subtitle: String,
     pinInput: String,
     errorMessage: String?,
-    isHintStep: Boolean,
-    hintValue: String,
-    onHintChange: (String) -> Unit,
+    isHintStep: Boolean = false,
+    hintValue: String = "",
     onDigitPress: (String) -> Unit,
     onBackspacePress: () -> Unit,
     onClearPress: () -> Unit,
-    onSubmitPress: () -> Unit
+    onHintChange: (String) -> Unit = {},
+    onSubmitPress: () -> Unit = {},
+    onBiometricPress: (() -> Unit)? = null
 ) {
     Column(
         modifier = Modifier
@@ -505,7 +528,7 @@ fun VaultPinTerminal(
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
-                        imageVector = Icons.Default.Security,
+                        imageVector = if (onBiometricPress != null) Icons.Default.Fingerprint else Icons.Default.Security,
                         contentDescription = null,
                         tint = SignalAccent,
                         modifier = Modifier.size(28.dp)
@@ -582,6 +605,17 @@ fun VaultPinTerminal(
                     }
                 }
 
+                if (onBiometricPress != null) {
+                    Spacer(modifier = Modifier.height(20.dp))
+                    InitButton(
+                        text = "UNLOCK WITH BIOMETRICS",
+                        leadingIcon = Icons.Default.Fingerprint,
+                        isPrimary = false,
+                        onClick = onBiometricPress,
+                        modifier = Modifier.fillMaxWidth(0.85f)
+                    )
+                }
+
                 if (errorMessage != null) {
                     Spacer(modifier = Modifier.height(14.dp))
                     Text(
@@ -597,7 +631,7 @@ fun VaultPinTerminal(
         }
 
         if (!isHintStep) {
-            // Keypad Layout (0-9, Backspace, Clear)
+            // Keypad Layout (0-9, Backspace, Clear/Biometrics)
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -617,38 +651,54 @@ fun VaultPinTerminal(
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         for (key in row) {
+                            val isBioKey = key == "C" && pinInput.isEmpty() && onBiometricPress != null
                             Surface(
                                 modifier = Modifier
                                     .weight(1f)
                                     .height(56.dp)
                                     .clip(RoundedCornerShape(14.dp))
                                     .clickable {
-                                        when (key) {
-                                            "C" -> onClearPress()
-                                            "DEL" -> onBackspacePress()
+                                        when {
+                                            isBioKey -> onBiometricPress()
+                                            key == "C" -> onClearPress()
+                                            key == "DEL" -> onBackspacePress()
                                             else -> onDigitPress(key)
                                         }
                                     },
                                 color = MaterialTheme.colorScheme.surfaceElevated,
                                 shape = RoundedCornerShape(14.dp),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                                border = androidx.compose.foundation.BorderStroke(
+                                    1.dp,
+                                    if (isBioKey) SignalAccent.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                                )
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
-                                    if (key == "DEL") {
-                                        Icon(
-                                            imageVector = Icons.AutoMirrored.Filled.Backspace,
-                                            contentDescription = "Backspace",
-                                            tint = MaterialTheme.colorScheme.onSurface,
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                    } else {
-                                        Text(
-                                            text = key,
-                                            fontFamily = MichromaFontFamily,
-                                            fontSize = 18.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = if (key == "C") MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
-                                        )
+                                    when {
+                                        isBioKey -> {
+                                            Icon(
+                                                imageVector = Icons.Default.Fingerprint,
+                                                contentDescription = "Biometrics",
+                                                tint = SignalAccent,
+                                                modifier = Modifier.size(24.dp)
+                                            )
+                                        }
+                                        key == "DEL" -> {
+                                            Icon(
+                                                imageVector = Icons.AutoMirrored.Filled.Backspace,
+                                                contentDescription = "Backspace",
+                                                tint = MaterialTheme.colorScheme.onSurface,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                        else -> {
+                                            Text(
+                                                text = key,
+                                                fontFamily = MichromaFontFamily,
+                                                fontSize = 18.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = if (key == "C") MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
+                                            )
+                                        }
                                     }
                                 }
                             }

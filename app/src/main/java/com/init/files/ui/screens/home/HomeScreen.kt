@@ -504,7 +504,7 @@ fun HomeScreen(
                         ) {
                             UtilityShortcutCard(
                                 title = "SAFE VAULT",
-                                subtitle = "AES-256 secure",
+                                subtitle = "Biometric & PIN",
                                 icon = Icons.Default.Security,
                                 modifier = Modifier.weight(1f),
                                 onClick = onNavigateToVault

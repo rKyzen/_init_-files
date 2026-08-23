@@ -1,5 +1,8 @@
 package com.init.files.ui.screens.vault
 
+import androidx.biometric.BiometricPrompt
+import androidx.core.content.ContextCompat
+import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.init.files.data.vault.VaultManager
@@ -61,6 +64,55 @@ class VaultViewModel(
             } else {
                 _uiState.value = VaultState.Locked
             }
+        }
+    }
+
+    fun launchBiometrics(activity: FragmentActivity) {
+        val config = _vaultConfig.value
+        if (!config.biometricsAvailable || !config.biometricsEnabled || _uiState.value !is VaultState.Locked) {
+            return
+        }
+
+        val executor = ContextCompat.getMainExecutor(activity)
+        val prompt = BiometricPrompt(activity, executor, object : BiometricPrompt.AuthenticationCallback() {
+            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                super.onAuthenticationSucceeded(result)
+                viewModelScope.launch {
+                    val success = vaultManager.unlockWithBiometrics()
+                    if (success) {
+                        _pinInput.value = ""
+                        _errorMessage.value = null
+                        loadVaultItems()
+                    } else {
+                        _errorMessage.value = "BIOMETRIC AUTHENTICATION FAILED"
+                    }
+                }
+            }
+
+            override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                super.onAuthenticationError(errorCode, errString)
+                if (errorCode != BiometricPrompt.ERROR_USER_CANCELED &&
+                    errorCode != BiometricPrompt.ERROR_NEGATIVE_BUTTON &&
+                    errorCode != BiometricPrompt.ERROR_CANCELED
+                ) {
+                    _errorMessage.value = errString.toString().uppercase()
+                }
+            }
+        })
+
+        val promptInfo = BiometricPrompt.PromptInfo.Builder()
+            .setTitle("UNLOCK PRIVATE VAULT")
+            .setSubtitle("Touch fingerprint sensor or face recognition")
+            .setNegativeButtonText("USE MASTER PIN")
+            .build()
+
+        prompt.authenticate(promptInfo)
+    }
+
+    fun toggleBiometrics(enabled: Boolean) {
+        viewModelScope.launch {
+            vaultManager.setBiometricsEnabled(enabled)
+            _vaultConfig.value = vaultManager.getVaultConfig()
         }
     }
 

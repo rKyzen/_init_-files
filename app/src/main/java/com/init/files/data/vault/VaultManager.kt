@@ -3,6 +3,11 @@ package com.init.files.data.vault
 import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
+import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyProperties
+import androidx.biometric.BiometricManager
+import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
+import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
 import com.init.files.data.local.InitDatabaseHelper
 import com.init.files.domain.model.VaultConfig
 import com.init.files.domain.model.VaultItem
@@ -11,18 +16,21 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.security.KeyStore
 import java.security.SecureRandom
 import java.util.UUID
 import javax.crypto.Cipher
 import javax.crypto.CipherInputStream
 import javax.crypto.CipherOutputStream
+import javax.crypto.KeyGenerator
+import javax.crypto.SecretKey
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
 
 /**
- * Manages zero-knowledge AES-256 encrypted Private Vault storage and PIN lifecycle.
+ * Manages zero-knowledge AES-256 encrypted Private Vault storage and PIN/Biometric lifecycle.
  */
 class VaultManager(
     private val context: Context,
@@ -41,6 +49,9 @@ class VaultManager(
     companion object {
         private const val KEY_ALGORITHM = "AES"
         private const val CIPHER_TRANSFORMATION = "AES/CBC/PKCS5Padding"
+        private const val KEYSTORE_TRANSFORMATION = "AES/CBC/PKCS7Padding"
+        private const val KEYSTORE_PROVIDER = "AndroidKeyStore"
+        private const val KEYSTORE_ALIAS = "InitFilesVaultBiometricKey"
         private const val PBKDF2_ALGORITHM = "PBKDF2WithHmacSHA256"
         private const val ITERATION_COUNT = 10_000
         private const val KEY_LENGTH_BITS = 256
@@ -50,6 +61,22 @@ class VaultManager(
         private const val PREF_PIN_HASH = "vault_pin_hash"
         private const val PREF_PIN_SALT = "vault_pin_salt"
         private const val PREF_PIN_HINT = "vault_pin_hint"
+        private const val PREF_BIOMETRICS_ENABLED = "vault_biometrics_enabled"
+        private const val PREF_BIOMETRIC_IV = "vault_biometric_iv"
+        private const val PREF_BIOMETRIC_TOKEN = "vault_biometric_token"
+    }
+
+    /**
+     * Checks if biometric hardware is present, enrolled, and supported on this device.
+     */
+    fun canAuthenticateWithBiometrics(): Boolean {
+        return try {
+            val biometricManager = BiometricManager.from(context)
+            val status = biometricManager.canAuthenticate(BIOMETRIC_STRONG or DEVICE_CREDENTIAL)
+            status == BiometricManager.BIOMETRIC_SUCCESS
+        } catch (_: Exception) {
+            false
+        }
     }
 
     /**
@@ -61,12 +88,26 @@ class VaultManager(
     }
 
     /**
-     * Returns the vault security config and optional hint.
+     * Returns the vault security config including biometrics support and hint.
      */
     suspend fun getVaultConfig(): VaultConfig = withContext(Dispatchers.IO) {
         val hasPin = isVaultConfigured()
         val hint = getPreference(PREF_PIN_HINT)
-        VaultConfig(hasPin = hasPin, hint = hint)
+        val bioPref = getPreference(PREF_BIOMETRICS_ENABLED)?.toBoolean() ?: true
+        val bioAvailable = canAuthenticateWithBiometrics()
+        VaultConfig(
+            hasPin = hasPin,
+            hint = hint,
+            biometricsAvailable = bioAvailable,
+            biometricsEnabled = bioPref
+        )
+    }
+
+    /**
+     * Sets whether biometric unlock should be allowed for this vault.
+     */
+    suspend fun setBiometricsEnabled(enabled: Boolean) = withContext(Dispatchers.IO) {
+        setPreference(PREF_BIOMETRICS_ENABLED, enabled.toString())
     }
 
     /**
@@ -91,6 +132,10 @@ class VaultManager(
             }
 
             activeMasterKey = key
+
+            // Store KeyStore-encrypted PIN token for biometric unlock
+            storeBiometricToken(pin)
+
             true
         } catch (_: Exception) {
             false
@@ -111,6 +156,8 @@ class VaultManager(
 
             if (storedHashHex.equals(computedHashHex, ignoreCase = true)) {
                 activeMasterKey = key
+                // Keep biometric token fresh
+                storeBiometricToken(pin)
                 true
             } else {
                 false
@@ -118,6 +165,65 @@ class VaultManager(
         } catch (_: Exception) {
             false
         }
+    }
+
+    /**
+     * Unlocks the vault using the Android KeyStore biometric token.
+     */
+    suspend fun unlockWithBiometrics(): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val ivHex = getPreference(PREF_BIOMETRIC_IV) ?: return@withContext false
+            val tokenHex = getPreference(PREF_BIOMETRIC_TOKEN) ?: return@withContext false
+
+            val iv = hexToBytes(ivHex)
+            val encryptedToken = hexToBytes(tokenHex)
+
+            val keyStoreKey = getOrCreateKeyStoreKey()
+            val cipher = Cipher.getInstance(KEYSTORE_TRANSFORMATION)
+            cipher.init(Cipher.DECRYPT_MODE, keyStoreKey, IvParameterSpec(iv))
+
+            val decryptedBytes = cipher.doFinal(encryptedToken)
+            val pin = String(decryptedBytes, Charsets.UTF_8)
+
+            verifyAndUnlock(pin)
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    private fun storeBiometricToken(pin: String) {
+        try {
+            val keyStoreKey = getOrCreateKeyStoreKey()
+            val cipher = Cipher.getInstance(KEYSTORE_TRANSFORMATION)
+            cipher.init(Cipher.ENCRYPT_MODE, keyStoreKey)
+
+            val iv = cipher.iv
+            val encryptedBytes = cipher.doFinal(pin.toByteArray(Charsets.UTF_8))
+
+            setPreference(PREF_BIOMETRIC_IV, bytesToHex(iv))
+            setPreference(PREF_BIOMETRIC_TOKEN, bytesToHex(encryptedBytes))
+        } catch (_: Exception) {}
+    }
+
+    private fun getOrCreateKeyStoreKey(): SecretKey {
+        val keyStore = KeyStore.getInstance(KEYSTORE_PROVIDER).apply { load(null) }
+        if (keyStore.containsAlias(KEYSTORE_ALIAS)) {
+            val entry = keyStore.getEntry(KEYSTORE_ALIAS, null) as? KeyStore.SecretKeyEntry
+            if (entry != null) return entry.secretKey
+        }
+
+        val keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, KEYSTORE_PROVIDER)
+        val keyGenSpec = KeyGenParameterSpec.Builder(
+            KEYSTORE_ALIAS,
+            KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
+        )
+            .setBlockModes(KeyProperties.BLOCK_MODE_CBC)
+            .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_PKCS7)
+            .setKeySize(256)
+            .build()
+
+        keyGenerator.init(keyGenSpec)
+        return keyGenerator.generateKey()
     }
 
     /**
