@@ -31,18 +31,6 @@ Most Android OEMs either bundle the ancient Google Files app or skip a file mana
 - **Theme:** Dark-first, near-black background, no red anywhere in the UI — destructiveness is signaled through typography and iconography rather than color
 - **Visual language:** Flat, outlined icons, generous whitespace, mechanical/precise motion — a dashboard feel over a "cute consumer app" feel
 
-## Tech Stack
-
-- Kotlin + Jetpack Compose (Material 3, fully re-themed)
-- MVVM architecture
-- Storage Access Framework (SAF) + MediaStore — fully scoped-storage compliant (Android 11+)
-- Hilt for dependency injection
-- Kotlin Coroutines + Flow
-- WorkManager for background scans
-- Room for local caching (folder trees, recents, favorites, search index)
-- Media3 ExoPlayer for the startup splash video
-- Min SDK 26 (Android 8.0)
-
 ## Project Status
 
 🚧 In active development — core browse/search/file-ops build is underway, with storage analyzer, preview, and settings screens following.
