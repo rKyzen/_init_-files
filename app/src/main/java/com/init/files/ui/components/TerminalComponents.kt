@@ -400,7 +400,7 @@ fun InitCard(
 }
 
 /**
- * Glassmorphic dropdown menu with tactile micro-stipple grain textured transparency and refined squircle border.
+ * Clean glassmorphic dropdown menu with smooth frosted translucency, elevated shadow, and refined squircle border.
  */
 @Composable
 fun InitDropdownMenu(
@@ -413,10 +413,16 @@ fun InitDropdownMenu(
         expanded = expanded,
         onDismissRequest = onDismissRequest,
         shape = RoundedCornerShape(16.dp),
-        containerColor = Color.Transparent,
-        shadowElevation = 0.dp,
-        border = null,
-        modifier = modifier.texturedGlass(shape = RoundedCornerShape(16.dp), elevation = 14.dp),
+        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
+        shadowElevation = 12.dp,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f)),
+        modifier = modifier
+            .shadow(
+                elevation = 12.dp,
+                shape = RoundedCornerShape(16.dp),
+                spotColor = Color.Black.copy(alpha = 0.45f)
+            )
+            .clip(RoundedCornerShape(16.dp)),
         content = content
     )
 }
