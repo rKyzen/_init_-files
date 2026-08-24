@@ -1,10 +1,17 @@
-﻿package com.init.file.data.vault
+package com.init.file.data.vault
 
+import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
+import android.net.Uri
+import android.os.Environment
+import android.provider.DocumentsContract
+import android.provider.MediaStore
+import android.provider.OpenableColumns
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
+import android.webkit.MimeTypeMap
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
 import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
@@ -25,6 +32,7 @@ import javax.crypto.CipherOutputStream
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.IvParameterSpec
+import javax.crypto.spec.SecretKeySpec
 
 /**
  * Manages zero-knowledge hardware-backed AES-256 encrypted Biometric Private Vault storage.
@@ -50,6 +58,7 @@ class VaultManager(
         private const val IV_BYTES = 16
 
         private const val PREF_VAULT_CONFIGURED = "vault_biometric_configured"
+        private const val PREF_VAULT_MASTER_SEED = "vault_master_seed"
     }
 
     /**
@@ -127,33 +136,51 @@ class VaultManager(
     fun isUnlocked(): Boolean = activeMasterKey != null
 
     private fun getOrCreateKeyStoreKey(): SecretKey {
-        val keyStore = KeyStore.getInstance(KEYSTORE_PROVIDER).apply { load(null) }
-        if (keyStore.containsAlias(KEYSTORE_ALIAS)) {
-            val entry = keyStore.getEntry(KEYSTORE_ALIAS, null) as? KeyStore.SecretKeyEntry
-            if (entry != null) return entry.secretKey
+        try {
+            val keyStore = KeyStore.getInstance(KEYSTORE_PROVIDER).apply { load(null) }
+            if (keyStore.containsAlias(KEYSTORE_ALIAS)) {
+                val entry = keyStore.getEntry(KEYSTORE_ALIAS, null) as? KeyStore.SecretKeyEntry
+                if (entry?.secretKey != null) return entry.secretKey
+                val directKey = keyStore.getKey(KEYSTORE_ALIAS, null) as? SecretKey
+                if (directKey != null) return directKey
+            }
+
+            val keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, KEYSTORE_PROVIDER)
+            val keyGenSpec = KeyGenParameterSpec.Builder(
+                KEYSTORE_ALIAS,
+                KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
+            )
+                .setBlockModes(KeyProperties.BLOCK_MODE_CBC)
+                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_PKCS7)
+                .setKeySize(256)
+                .build()
+
+            keyGenerator.init(keyGenSpec)
+            return keyGenerator.generateKey()
+        } catch (_: Exception) {
+            return getFallbackSecretKey()
         }
+    }
 
-        val keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, KEYSTORE_PROVIDER)
-        val keyGenSpec = KeyGenParameterSpec.Builder(
-            KEYSTORE_ALIAS,
-            KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
-        )
-            .setBlockModes(KeyProperties.BLOCK_MODE_CBC)
-            .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_PKCS7)
-            .setKeySize(256)
-            .build()
-
-        keyGenerator.init(keyGenSpec)
-        return keyGenerator.generateKey()
+    private fun getFallbackSecretKey(): SecretKey {
+        var seedHex = getPreference(PREF_VAULT_MASTER_SEED)
+        if (seedHex == null || seedHex.length != 64) {
+            val seedBytes = ByteArray(32)
+            SecureRandom().nextBytes(seedBytes)
+            seedHex = seedBytes.joinToString("") { "%02x".format(it) }
+            setPreference(PREF_VAULT_MASTER_SEED, seedHex)
+        }
+        val keyBytes = seedHex.chunked(2).map { it.toInt(16).toByte() }.toByteArray()
+        return SecretKeySpec(keyBytes, "AES")
     }
 
     /**
      * Encrypts an external file and moves it securely into the vault.
      */
     suspend fun encryptAndVaultFile(sourceFile: File): Result<VaultItem> = withContext(Dispatchers.IO) {
-        val key = activeMasterKey ?: return@withContext Result.failure(IllegalStateException("Vault is locked"))
+        val key = activeMasterKey ?: return@withContext Result.failure(IllegalStateException("Vault is locked. Authenticate first."))
         if (!sourceFile.exists() || sourceFile.isDirectory) {
-            return@withContext Result.failure(IllegalArgumentException("Source file invalid or is directory"))
+            return@withContext Result.failure(IllegalArgumentException("Source file invalid or does not exist"))
         }
 
         try {
@@ -167,9 +194,9 @@ class VaultManager(
 
             val encryptedFileName = "${UUID.randomUUID()}.vault"
             val destVaultFile = File(vaultDir, encryptedFileName)
+            val originalLength = sourceFile.length()
 
             FileOutputStream(destVaultFile).use { fos ->
-                // Write IV as header
                 fos.write(iv)
                 CipherOutputStream(fos, cipher).use { cos ->
                     FileInputStream(sourceFile).use { fis ->
@@ -178,13 +205,14 @@ class VaultManager(
                         while (fis.read(buffer).also { read = it } != -1) {
                             cos.write(buffer, 0, read)
                         }
+                        cos.flush()
                     }
                 }
             }
 
-            // Securely wipe original file
+            // Securely wipe original file if writable
             try {
-                if (sourceFile.length() > 0) {
+                if (sourceFile.length() > 0 && sourceFile.canWrite()) {
                     val zeroBuf = ByteArray(8192)
                     FileOutputStream(sourceFile).use { fos ->
                         var remaining = sourceFile.length()
@@ -195,30 +223,159 @@ class VaultManager(
                         }
                     }
                 }
+                sourceFile.delete()
             } catch (_: Exception) {}
-            sourceFile.delete()
 
             // Record in Database
+            val mime = getMimeType(sourceFile)
             val db = dbHelper.writableDatabase
             val values = ContentValues().apply {
                 put("original_path", sourceFile.absolutePath)
                 put("vault_path", destVaultFile.absolutePath)
                 put("name", sourceFile.name)
-                put("size", destVaultFile.length())
+                put("size", if (originalLength > 0) originalLength else destVaultFile.length())
                 put("encrypted_at", System.currentTimeMillis())
-                put("mime_type", getMimeType(sourceFile))
+                put("mime_type", mime)
                 put("is_directory", 0)
             }
-            val id = db.insert(InitDatabaseHelper.TABLE_VAULT, null, values)
+            val id = db.insertWithOnConflict(
+                InitDatabaseHelper.TABLE_VAULT,
+                null,
+                values,
+                SQLiteDatabase.CONFLICT_REPLACE
+            )
 
             val vaultItem = VaultItem(
                 id = id,
                 originalPath = sourceFile.absolutePath,
                 vaultPath = destVaultFile.absolutePath,
                 name = sourceFile.name,
-                sizeBytes = destVaultFile.length(),
+                sizeBytes = if (originalLength > 0) originalLength else destVaultFile.length(),
                 encryptedAt = System.currentTimeMillis(),
-                mimeType = getMimeType(sourceFile)
+                mimeType = mime
+            )
+
+            Result.success(vaultItem)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Encrypts a file from a ContentResolver Uri and stores it in the private vault.
+     */
+    suspend fun encryptAndVaultUri(
+        contentResolver: ContentResolver,
+        uri: Uri,
+        originalPathHint: String? = null,
+        nameHint: String? = null
+    ): Result<VaultItem> = withContext(Dispatchers.IO) {
+        val key = activeMasterKey ?: return@withContext Result.failure(IllegalStateException("Vault is locked. Authenticate first."))
+
+        try {
+            var fileName = nameHint
+            var fileSize = 0L
+            var mimeType: String? = null
+
+            // Query ContentResolver for metadata
+            try {
+                contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                    if (cursor.moveToFirst()) {
+                        val nameCol = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                        if (nameCol != -1 && fileName == null) {
+                            fileName = cursor.getString(nameCol)
+                        }
+                        val sizeCol = cursor.getColumnIndex(OpenableColumns.SIZE)
+                        if (sizeCol != -1) {
+                            fileSize = cursor.getLong(sizeCol)
+                        }
+                    }
+                }
+            } catch (_: Exception) {}
+
+            if (fileName.isNullOrBlank()) {
+                val lastSeg = uri.lastPathSegment ?: "file_${System.currentTimeMillis()}"
+                fileName = if (lastSeg.contains("/")) lastSeg.substringAfterLast('/') else lastSeg
+            }
+            if (fileName!!.contains("/")) {
+                fileName = fileName!!.substringAfterLast('/')
+            }
+            if (mimeType == null) {
+                mimeType = contentResolver.getType(uri) ?: getMimeTypeFromName(fileName!!)
+            }
+
+            val originalPath = originalPathHint ?: resolveRealPathFromUri(context, uri) ?: uri.toString()
+
+            val random = SecureRandom()
+            val iv = ByteArray(IV_BYTES)
+            random.nextBytes(iv)
+            val ivSpec = IvParameterSpec(iv)
+
+            val cipher = Cipher.getInstance(CIPHER_TRANSFORMATION)
+            cipher.init(Cipher.ENCRYPT_MODE, key, ivSpec)
+
+            val encryptedFileName = "${UUID.randomUUID()}.vault"
+            val destVaultFile = File(vaultDir, encryptedFileName)
+
+            val inputStream = contentResolver.openInputStream(uri)
+                ?: return@withContext Result.failure(IllegalStateException("Unable to read selected file stream"))
+
+            var totalBytes = 0L
+            inputStream.use { fis ->
+                FileOutputStream(destVaultFile).use { fos ->
+                    fos.write(iv)
+                    CipherOutputStream(fos, cipher).use { cos ->
+                        val buffer = ByteArray(64 * 1024)
+                        var read: Int
+                        while (fis.read(buffer).also { read = it } != -1) {
+                            cos.write(buffer, 0, read)
+                            totalBytes += read
+                        }
+                        cos.flush()
+                    }
+                }
+            }
+
+            // Attempt to wipe/delete original if it's a real filesystem path
+            try {
+                if (originalPath.startsWith("/")) {
+                    val originalFile = File(originalPath)
+                    if (originalFile.exists() && originalFile.canWrite()) {
+                        originalFile.delete()
+                    }
+                }
+                if (DocumentsContract.isDocumentUri(context, uri)) {
+                    DocumentsContract.deleteDocument(contentResolver, uri)
+                }
+            } catch (_: Exception) {}
+
+            val recordedSize = if (fileSize > 0) fileSize else totalBytes
+
+            val db = dbHelper.writableDatabase
+            val values = ContentValues().apply {
+                put("original_path", originalPath)
+                put("vault_path", destVaultFile.absolutePath)
+                put("name", fileName)
+                put("size", recordedSize)
+                put("encrypted_at", System.currentTimeMillis())
+                put("mime_type", mimeType)
+                put("is_directory", 0)
+            }
+            val id = db.insertWithOnConflict(
+                InitDatabaseHelper.TABLE_VAULT,
+                null,
+                values,
+                SQLiteDatabase.CONFLICT_REPLACE
+            )
+
+            val vaultItem = VaultItem(
+                id = id,
+                originalPath = originalPath,
+                vaultPath = destVaultFile.absolutePath,
+                name = fileName!!,
+                sizeBytes = recordedSize,
+                encryptedAt = System.currentTimeMillis(),
+                mimeType = mimeType
             )
 
             Result.success(vaultItem)
@@ -231,7 +388,7 @@ class VaultManager(
      * Decrypts a vault item to the secure temporary preview cache.
      */
     suspend fun decryptToTempCache(item: VaultItem): Result<File> = withContext(Dispatchers.IO) {
-        val key = activeMasterKey ?: return@withContext Result.failure(IllegalStateException("Vault is locked"))
+        val key = activeMasterKey ?: return@withContext Result.failure(IllegalStateException("Vault is locked. Authenticate first."))
         val vaultFile = File(item.vaultPath)
         if (!vaultFile.exists()) return@withContext Result.failure(IllegalStateException("Encrypted file missing"))
 
@@ -270,15 +427,17 @@ class VaultManager(
      * Restores a vault item back to external storage (original path or custom directory).
      */
     suspend fun restoreVaultItem(item: VaultItem, targetDir: File? = null): Result<File> = withContext(Dispatchers.IO) {
-        val key = activeMasterKey ?: return@withContext Result.failure(IllegalStateException("Vault is locked"))
+        val key = activeMasterKey ?: return@withContext Result.failure(IllegalStateException("Vault is locked. Authenticate first."))
         val vaultFile = File(item.vaultPath)
         if (!vaultFile.exists()) return@withContext Result.failure(IllegalStateException("Vault file not found"))
 
         try {
             val destination = if (targetDir != null) {
                 File(targetDir, item.name)
-            } else {
+            } else if (item.originalPath.startsWith("/")) {
                 File(item.originalPath)
+            } else {
+                File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), item.name)
             }
 
             destination.parentFile?.mkdirs()
@@ -422,8 +581,65 @@ class VaultManager(
     }
 
     private fun getMimeType(file: File): String {
-        val ext = file.name.substringAfterLast('.', "").lowercase()
-        return android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext) ?: "application/octet-stream"
+        return getMimeTypeFromName(file.name)
+    }
+
+    private fun getMimeTypeFromName(name: String): String {
+        val ext = name.substringAfterLast('.', "").lowercase()
+        return MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext) ?: "application/octet-stream"
+    }
+
+    private fun resolveRealPathFromUri(context: Context, uri: Uri): String? {
+        if ("file".equals(uri.scheme, ignoreCase = true)) {
+            return uri.path
+        }
+        try {
+            if (DocumentsContract.isDocumentUri(context, uri)) {
+                val docId = DocumentsContract.getDocumentId(uri)
+                val auth = uri.authority
+                if (auth == "com.android.externalstorage.documents") {
+                    val split = docId.split(":")
+                    val type = split[0]
+                    val sub = if (split.size > 1) split[1] else ""
+                    return if ("primary".equals(type, ignoreCase = true)) {
+                        "${Environment.getExternalStorageDirectory().absolutePath}/$sub"
+                    } else {
+                        "/storage/$type/$sub"
+                    }
+                } else if (auth == "com.android.providers.downloads.documents") {
+                    if (docId.startsWith("raw:")) {
+                        return docId.removePrefix("raw:")
+                    }
+                } else if (auth == "com.android.providers.media.documents") {
+                    val split = docId.split(":")
+                    val type = split[0]
+                    val id = if (split.size > 1) split[1] else docId
+                    val contentUri = when (type) {
+                        "image" -> MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+                        "video" -> MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+                        "audio" -> MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+                        else -> MediaStore.Files.getContentUri("external")
+                    }
+                    val selection = "_id=?"
+                    val selectionArgs = arrayOf(id)
+                    context.contentResolver.query(contentUri, arrayOf(MediaStore.MediaColumns.DATA), selection, selectionArgs, null)?.use { cursor ->
+                        if (cursor.moveToFirst()) {
+                            val idx = cursor.getColumnIndex(MediaStore.MediaColumns.DATA)
+                            if (idx != -1) return cursor.getString(idx)
+                        }
+                    }
+                }
+            }
+            context.contentResolver.query(uri, arrayOf(MediaStore.MediaColumns.DATA), null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val idx = cursor.getColumnIndex(MediaStore.MediaColumns.DATA)
+                    if (idx != -1) {
+                        val path = cursor.getString(idx)
+                        if (!path.isNullOrBlank()) return path
+                    }
+                }
+            }
+        } catch (_: Exception) {}
+        return null
     }
 }
-

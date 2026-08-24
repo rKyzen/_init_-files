@@ -1,5 +1,7 @@
-﻿package com.init.file.ui.screens.vault
+package com.init.file.ui.screens.vault
 
+import android.content.Context
+import android.net.Uri
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
@@ -50,7 +52,7 @@ class VaultViewModel(
         }
     }
 
-    fun authenticateWithBiometrics(activity: FragmentActivity) {
+    fun authenticateWithBiometrics(activity: FragmentActivity, onSucceeded: (() -> Unit)? = null) {
         val executor = ContextCompat.getMainExecutor(activity)
         val prompt = BiometricPrompt(activity, executor, object : BiometricPrompt.AuthenticationCallback() {
             override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
@@ -66,6 +68,7 @@ class VaultViewModel(
                         _errorMessage.value = null
                         _vaultConfig.value = vaultManager.getVaultConfig()
                         loadVaultItems()
+                        onSucceeded?.invoke()
                     } else {
                         _errorMessage.value = "BIOMETRIC AUTHENTICATION FAILED"
                     }
@@ -84,7 +87,7 @@ class VaultViewModel(
         })
 
         val promptInfo = BiometricPrompt.PromptInfo.Builder()
-            .setTitle(if (_uiState.value is VaultState.Uninitialized) "ACTIVATE BIOMETRIC VAULT" else "UNLOCK PRIVATE VAULT")
+            .setTitle(if (_uiState.value is VaultState.Uninitialized) "ACTIVATE SAFE VAULT" else "UNLOCK PRIVATE VAULT")
             .setSubtitle("Touch fingerprint sensor or face recognition")
             .setAllowedAuthenticators(
                 BiometricManager.Authenticators.BIOMETRIC_STRONG or
@@ -101,6 +104,10 @@ class VaultViewModel(
         _uiState.value = VaultState.Locked
     }
 
+    fun clearError() {
+        _errorMessage.value = null
+    }
+
     fun loadVaultItems() {
         viewModelScope.launch {
             val items = vaultManager.getAllVaultItems()
@@ -114,20 +121,80 @@ class VaultViewModel(
         }
     }
 
-    fun importFiles(fileItems: List<FileItem>) {
+    fun importUris(context: Context, uris: List<Uri>, onComplete: (() -> Unit)? = null) {
         viewModelScope.launch {
+            if (!vaultManager.isUnlocked()) {
+                val unlocked = vaultManager.unlockWithBiometrics()
+                if (!unlocked) {
+                    _errorMessage.value = "VAULT MUST BE UNLOCKED FIRST"
+                    return@launch
+                }
+            }
+
             _uiState.value = VaultState.Processing("ENCRYPTING & IMPORTING FILES...")
             var successCount = 0
+            var lastError: String? = null
+
+            for ((index, uri) in uris.withIndex()) {
+                val progress = (index + 1).toFloat() / uris.size.toFloat()
+                _uiState.value = VaultState.Processing("ENCRYPTING FILE ${index + 1}/${uris.size}...", progress)
+                val result = vaultManager.encryptAndVaultUri(context.contentResolver, uri)
+                if (result.isSuccess) {
+                    successCount++
+                } else {
+                    lastError = result.exceptionOrNull()?.localizedMessage ?: "Unknown encryption error"
+                }
+            }
+
+            if (successCount == 0 && lastError != null) {
+                _errorMessage.value = "IMPORT FAILED: $lastError"
+            } else if (successCount < uris.size && lastError != null) {
+                _errorMessage.value = "IMPORTED $successCount/${uris.size} FILES ($lastError)"
+            } else {
+                _errorMessage.value = null
+            }
+            loadVaultItems()
+            onComplete?.invoke()
+        }
+    }
+
+    fun importFiles(fileItems: List<FileItem>, onComplete: (() -> Unit)? = null) {
+        viewModelScope.launch {
+            if (!vaultManager.isUnlocked()) {
+                val unlocked = vaultManager.unlockWithBiometrics()
+                if (!unlocked) {
+                    _errorMessage.value = "VAULT MUST BE UNLOCKED FIRST"
+                    return@launch
+                }
+            }
+
+            _uiState.value = VaultState.Processing("ENCRYPTING & IMPORTING FILES...")
+            var successCount = 0
+            var lastError: String? = null
+
             for ((index, item) in fileItems.withIndex()) {
                 val file = File(item.path)
                 if (file.exists() && file.isFile) {
                     val progress = (index + 1).toFloat() / fileItems.size.toFloat()
                     _uiState.value = VaultState.Processing("ENCRYPTING: ${file.name}", progress)
                     val result = vaultManager.encryptAndVaultFile(file)
-                    if (result.isSuccess) successCount++
+                    if (result.isSuccess) {
+                        successCount++
+                    } else {
+                        lastError = result.exceptionOrNull()?.localizedMessage ?: "Encryption failed"
+                    }
                 }
             }
+
+            if (successCount == 0 && lastError != null) {
+                _errorMessage.value = "IMPORT FAILED: $lastError"
+            } else if (successCount < fileItems.size && lastError != null) {
+                _errorMessage.value = "IMPORTED $successCount/${fileItems.size} FILES ($lastError)"
+            } else {
+                _errorMessage.value = null
+            }
             loadVaultItems()
+            onComplete?.invoke()
         }
     }
 
@@ -205,4 +272,3 @@ class VaultViewModel(
         vaultManager.clearTempCache()
     }
 }
-
