@@ -151,7 +151,7 @@
     <string name="settings_indexer_desc">Periodic background storage indexer via WorkManager</string>
     <string name="settings_about_title">about _init_ /files</string>
     <string name="settings_about_desc">part of the _init_ system utility suite. built with high precision, zero telemetry, and scoped storage compliance.</string>
-    <string name="settings_version_label">v 0.1 alpha</string>
+    <string name="settings_version_label">v 0.2 alpha</string>
 
     <!-- Permissions Rationale -->
     <string name="permission_title">storage access required</string>
