@@ -15,9 +15,21 @@ android {
         versionName = "0.2-alpha"
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("init-release.jks")
+            storePassword = "initfiles2026"
+            keyAlias = "init-files"
+            keyPassword = "initfiles2026"
+            enableV1Signing = true
+            enableV2Signing = true
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
